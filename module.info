@@ -1,0 +1,3 @@
+desc=Virtualmin Bootup Actions
+depends=init
+category=system
