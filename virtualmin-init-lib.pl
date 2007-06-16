@@ -1,12 +1,13 @@
 # Functions for domain-level init scripts
-# XXX cd to home directory
 # XXX malicious use of VIRTUALMINEOF, or ` within su block
+# XXX SMF
 
 do '../web-lib.pl';
 &init_config();
 do '../ui-lib.pl';
 &foreign_require("virtual-server", "virtual-server-lib.pl");
 %access = &get_module_acl();
+$action_templates_dir = "$module_config_directory/templates";
 
 # virtualmin_init_check()
 # Returns an error if some required config is missing
@@ -171,6 +172,22 @@ else {
 	}
 }
 
+# count_user_actions()
+# Returns the number of actions the current user has across all domains
+sub count_user_actions
+{
+local @doms = grep { $_->{$module_name} &&
+		     &virtual_server::can_edit_domain($_) }
+		   &virtual_server::list_domains();
+local $c = 0;
+foreach my $d (@doms) {
+	foreach my $i (&list_domain_actions($d)) {
+		$c++;
+		}
+	}
+return $c;
+}
+
 # extract_action_command(section, script)
 sub extract_action_command
 {
@@ -205,6 +222,45 @@ if ($init->{$section}) {
 else {
 	return undef;
 	}
+}
+
+# list_action_templates()
+# Returns an array of hash refs, each contain the details of one action template
+sub list_action_templates
+{
+local @rv;
+opendir(DIR, $action_templates_dir) || return ( );
+foreach my $f (readdir(DIR)) {
+	if ($f =~ /^\d+$/) {
+		local %tmpl;
+		&read_file("$action_templates_dir/$f", \%tmpl);
+		$tmpl{'start'} =~ s/\t/\n/g;
+		$tmpl{'stop'} =~ s/\t/\n/g;
+		push(@rv, \%tmpl);
+		}
+	}
+closedir(DIR);
+return @rv;
+}
+
+# save_action_template(&tmpl)
+# Create or update an action template
+sub save_action_template
+{
+local ($tmpl) = @_;
+$tmpl->{'id'} ||= time();
+local %savetmpl = %$tmpl;
+$savetmpl{'start'} =~ s/\n/\t/g;
+$savetmpl{'stop'} =~ s/\n/\t/g;
+&make_dir($action_templates_dir, 0700);
+&write_file("$action_templates_dir/$tmpl->{'id'}", \%savetmpl);
+}
+
+# delete_action_template(&tmpl)
+sub delete_action_template
+{
+local ($tmpl) = @_;
+unlink("$action_templates_dir/$tmpl->{'id'}");
 }
 
 1;

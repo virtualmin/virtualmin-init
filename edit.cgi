@@ -47,6 +47,39 @@ print &ui_table_row($text{'edit_desc'},
 print &ui_table_row($text{'edit_status'},
 	&ui_yesno_radio("status", int($init->{'status'})));
 
+# Template, if any are available
+@tmpls = &list_action_templates();
+print "<script>\n";
+print "function select_template(id)\n";
+print "{\n";
+print "form = document.forms[0]\n";
+print "if (id == 0) {\n";
+print "  form.start.value = '';\n";
+print "  form.start.disabled = false;\n";
+print "  form.stop.value = '';\n";
+print "  form.stop.disabled = false;\n";
+print "  }\n";
+foreach $tmpl (@tmpls) {
+	print "else if (id == $tmpl->{'id'}) {\n";
+	$tmpl->{'start'} =~ s/\n/\\n/g;
+	$tmpl->{'stop'} =~ s/\n/\\n/g;
+	print "  form.start.value = '$tmpl->{'start'}';\n";
+	print "  form.start.disabled = true;\n";
+	print "  form.stop.value = '$tmpl->{'stop'}';\n";
+	print "  form.stop.disabled = true;\n";
+	print "  }\n";
+	}
+print "}\n";
+print "</script>\n";
+if ($in{'new'} && @tmpls) {
+	print &ui_table_row($text{'edit_tmpl'},
+		&ui_select("tmpl", 0,
+		  [ [ 0, "&lt;$text{'edit_manual'}&gt;" ],
+		    map { [ $_->{'id'}, $_->{'desc'} ] } @tmpls ],
+		  1, 0, 0, 0,
+		  "onChange='select_template(options[selectedIndex].value)'"));
+	}
+
 # Start code
 print &ui_table_row($text{'edit_start'},
 	&ui_textarea("start", $init->{'start'}, 5, 80));

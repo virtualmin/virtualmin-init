@@ -12,6 +12,13 @@ if ($in{'old'}) {
 	($init) = grep { $_->{'name'} eq $in{'old'} } @inits;
 	$oldinit = { %$init };
 	}
+elsif ($access{'max'}) {
+	# Check if limit was hit
+	$c = &count_user_actions();
+	if ($c >= $access{'max'}) {
+		&error(&text('save_etoomany', $access{'max'}));
+		}
+	}
 
 if ($in{'startnow'}) {
 	# Start now and show output
@@ -54,15 +61,25 @@ else {
 	$init->{'name'} = $in{'name'};
 	$init->{'desc'} = $in{'desc'};
 	$init->{'status'} = $in{'status'};
-	$in{'start'} =~ s/\r//g;
-	$in{'start'} =~ s/\n+$//g;
-	$in{'start'} .= "\n";
-	$in{'start'} =~ /\S/ || &error($text{'save_estart'});
-	$init->{'start'} = $in{'start'};
-	$in{'stop'} =~ s/\r//g;
-	$in{'stop'} =~ s/\n+$//g;
-	$in{'stop'} .= "\n" if ($in{'stop'} =~ /\S/);
-	$init->{'stop'} = $in{'stop'};
+	if ($in{'new'} && $in{'tmpl'}) {
+		# From template
+		($tmpl) = grep { $_->{'id'} == $in{'tmpl'} }
+				&list_action_templates();
+		$init->{'start'} = $tmpl->{'start'};
+		$init->{'stop'} = $tmpl->{'stop'};
+		}
+	else {
+		# Manually entered
+		$in{'start'} =~ s/\r//g;
+		$in{'start'} =~ /\S/ || &error($text{'save_estart'});
+		$init->{'start'} = $in{'start'};
+		$in{'stop'} =~ s/\r//g;
+		$init->{'stop'} = $in{'stop'};
+		}
+	$tmpl->{'start'} =~ s/\n+$//g;
+	$tmpl->{'start'} .= "\n";
+	$tmpl->{'stop'} =~ s/\n+$//g;
+	$tmpl->{'stop'} .= "\n" if ($tmpl->{'stop'} =~ /\S/);
 	$init->{'user'} = $d->{'user'};
 
 	# Create or save
