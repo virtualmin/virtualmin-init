@@ -38,13 +38,15 @@ if ($config{'mode'} eq 'init') {
 		if ($a =~ /^\Q$d->{'dom'}\E_(\S+)$/) {
 			# Found one for the domain
 			local $init = { 'type' => 'init',
-					'name' => $2 };
+					'name' => $1 };
+			$init->{'desc'} = &init::init_description(
+					    &init::action_filename($a), { });
 			$init->{'status'} = &init::action_status($a) == 2;
 			local $data = &read_file_contents(
 					&init::action_filename($a));
-			($init->{'start'}, $init->{'user'}) =
+			($init->{'user'}, $init->{'start'}) =
 				&extract_action_command('start', $data);
-			($init->{'stop'}) =
+			(undef, $init->{'stop'}) =
 				&extract_action_command('stop', $data);
 			push(@rv, $init);
 			}
@@ -69,6 +71,12 @@ if ($config{'mode'} eq 'init') {
 	local $stop = &make_action_command('stop', $init, $d->{'home'});
 	&init::enable_at_boot($d->{'dom'}."_".$init->{'name'},
 			      $init->{'desc'}, $start, $stop);
+	local $if = &init::action_filename($d->{'dom'}."_".$init->{'name'});
+	local $data = &read_file_contents($if);
+	$data =~ s/[ \t]+(VIRTUALMINEOF)/$1/g;	# Remove tab at start
+	&open_tempfile(INIT, ">$if");
+	&print_tempfile(INIT, $data);
+	&close_tempfile(INIT);
 	if (!$init->{'status'}) {
 		&init::disable_at_boot($d->{'dom'}."_".$init->{'name'});
 		}
@@ -121,16 +129,60 @@ else {
 	}
 }
 
+# start_domain_action(&domain, &init)
+# Start some init script, and output the results
+sub start_domain_action
+{
+local ($d, $init) = @_;
+if ($config{'mode'} eq 'init') {
+	# Run init script
+	&foreign_require("init", "init-lib.pl");
+	local $cmd = &init::action_filename($d->{'dom'}."_".$init->{'name'});
+	open(OUT, "$cmd start 2>&1 |");
+	while(<OUT>) {
+		print &html_escape($_);
+		}
+	close(OUT);
+	}
+else {
+	# Run SMF action
+	# XXX
+	}
+}
+
+# stop_domain_action(&domain, &init)
+# Start some init script, and output the results
+sub stop_domain_action
+{
+local ($d, $init) = @_;
+if ($config{'mode'} eq 'init') {
+	# Run init script
+	&foreign_require("init", "init-lib.pl");
+	local $cmd = &init::action_filename($d->{'dom'}."_".$init->{'name'});
+	open(OUT, "$cmd stop 2>&1 |");
+	while(<OUT>) {
+		print &html_escape($_);
+		}
+	close(OUT);
+	}
+else {
+	# Run SMF action
+	# XXX
+	}
+}
+
 # extract_action_command(section, script)
 sub extract_action_command
 {
 local ($section, $data) = @_;
-if ($data =~ /'\Q$section\E')\n([\000-\377]*?);;/) {
+if ($data =~ /'\Q$section\E'\)\n([\000-\377]*?);;/) {
 	# Found the section .. get out the su command
 	local $script = $1;
 	$script =~ s/\s+$//;
-	if ($script =~ /^\s*su\s+\-\s+(\S+)\s*<<VIRTUALMINEOF\ncd\s*(.*)\n([\000-\377]*)VIRTUALMINEOF/) {
-		return ($1, $3, $2);
+	if ($script =~ /^\s*su\s+\-\s+(\S+)\s*<<VIRTUALMINEOF\n\s*cd\s*(\S+)\n([\000-\377]*)VIRTUALMINEOF/) {
+		local @rv = ($1, $3, $2);
+		$rv[1] =~ s/(^|\n)\s*/$1/g;	# strip spaces at start of lines
+		return @rv;
 		}
 	else {
 		return ('root', $script);
@@ -147,7 +199,7 @@ local ($section, $init, $dir) = @_;
 if ($init->{$section}) {
 	return "su - $init->{'user'} <<VIRTUALMINEOF\n".
 	       "cd $dir\n".
-	       $init->{$section}."\n".
+	       $init->{$section}.
 	       "VIRTUALMINEOF\n";
 	}
 else {

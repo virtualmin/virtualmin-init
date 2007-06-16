@@ -44,14 +44,14 @@ if (@allinits) {
 			 "$i->{'name'}</a>",
 			$i->{'desc'},
 			$i->{'status'} ? $green : $red ],
-			"d", $i->{'dom'}."/".$i->{'name'});
+			\@tds, "d", $i->{'dom'}."/".$i->{'name'});
 		}
 	print &ui_columns_end();
 	print &ui_links_row(\@links);
 	print &ui_form_end([ [ "delete", $text{'index_delete'} ],
 			     undef,
-			     [ "start", $text{'index_startnow'} ],
-			     [ "stop", $text{'index_stopnow'} ],
+			     [ "startnow", $text{'index_startnow'} ],
+			     [ "stopnow", $text{'index_stopnow'} ],
 			   ]);
 	}
 else {

@@ -39,6 +39,10 @@ if (!$in{'dom'}) {
 print &ui_table_row($text{'edit_name'},
 	&ui_textbox("name", $init->{'name'}, 30));
 
+# Description
+print &ui_table_row($text{'edit_desc'},
+	&ui_textbox("desc", $init->{'desc'}, 60));
+
 # Enabled?
 print &ui_table_row($text{'edit_status'},
 	&ui_yesno_radio("status", int($init->{'status'})));
@@ -59,8 +63,8 @@ else {
 	print &ui_form_end([ [ "save", $text{'save'} ],
 			     [ "delete", $text{'delete'} ],
 			     undef,
-			     [ "start", $text{'edit_startnow'} ],
-			     [ "stop", $text{'edit_stopnow'} ] ]);
+			     [ "startnow", $text{'edit_startnow'} ],
+			     [ "stopnow", $text{'edit_stopnow'} ] ]);
 	}
 
 &ui_print_footer("index.cgi?dom=$in{'dom'}", $text{'index_return'});
