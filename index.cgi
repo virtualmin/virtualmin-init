@@ -30,6 +30,7 @@ foreach my $d (@doms) {
 if (@allinits) {
 	unshift(@links, &select_all_link("d"), &select_invert_link("d"));
 	@tds = ( "width=5", undef, undef, "width=10%" );
+	print &ui_form_start("mass.cgi", "post");
 	print &ui_links_row(\@links);
 	print &ui_columns_start([ "",
 				  $text{'index_name'},
@@ -45,9 +46,21 @@ if (@allinits) {
 			$i->{'status'} ? $green : $red ],
 			"d", $i->{'dom'}."/".$i->{'name'});
 		}
+	print &ui_columns_end();
 	print &ui_links_row(\@links);
+	print &ui_form_end([ [ "delete", $text{'index_delete'} ],
+			     undef,
+			     [ "start", $text{'index_startnow'} ],
+			     [ "stop", $text{'index_stopnow'} ],
+			   ]);
 	}
 else {
+	if ($in{'dom'}) {
+		print "<b>$text{'index_none'}</b><p>\n";
+		}
+	else {
+		print "<b>$text{'index_none2'}</b><p>\n";
+		}
 	print &ui_links_row(\@links);
 	}
 

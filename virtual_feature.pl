@@ -1,5 +1,6 @@
 # Defines functions for this feature
 
+do 'virtualmin-init-lib.pl';
 $input_name = $module_name;
 $input_name =~ s/[^A-Za-z0-9]/_/g;
 
@@ -138,7 +139,7 @@ sub feature_links
 local ($d) = @_;
 return ( { 'mod' => $module_name,
 	   'desc' => $text{'links_link'},
-	   'page' => 'index.cgi?dom='.$d->{'dom'},
+	   'page' => 'index.cgi?dom='.$d->{'id'},
 	   'cat' => 'services',
 	 } );
 }

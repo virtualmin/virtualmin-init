@@ -1,10 +1,27 @@
 # Functions for domain-level init scripts
+# XXX cd to home directory
+# XXX malicious use of VIRTUALMINEOF, or ` within su block
 
 do '../web-lib.pl';
 &init_config();
 do '../ui-lib.pl';
 &foreign_require("virtual-server", "virtual-server-lib.pl");
 %access = &get_module_acl();
+
+# virtualmin_init_check()
+# Returns an error if some required config is missing
+sub virtualmin_init_check
+{
+if ($config{'mode'} eq 'init') {
+	&foreign_check("init") || return $text{'check_einit'};
+	&foreign_require("init", "init-lib.pl");
+	$init::init_mode eq "init" || return $text{'check_einit2'};
+	}
+else {
+	# XXX smf check
+	}
+return undef;
+}
 
 # list_domain_actions(&domain)
 # Returns a list of init scripts belonging to the specified domain. These
@@ -48,8 +65,8 @@ local ($d, $init) = @_;
 if ($config{'mode'} eq 'init') {
 	# Add init script
 	&foreign_require("init", "init-lib.pl");
-	local $start = &make_action_command('start', $init);
-	local $stop = &make_action_command('stop', $init);
+	local $start = &make_action_command('start', $init, $d->{'home'});
+	local $stop = &make_action_command('stop', $init, $d->{'home'});
 	&init::enable_at_boot($d->{'dom'}."_".$init->{'name'},
 			      $init->{'desc'}, $start, $stop);
 	if (!$init->{'status'}) {
@@ -88,7 +105,7 @@ if ($config{'mode'} eq 'init') {
 	# Delete init script and links
 	&foreign_require("init", "init-lib.pl");
 	local $name = $d->{'dom'}.'_'.$init->{'name'};
-	foreach my $l (&init::action_levels('S', $name) {
+	foreach my $l (&init::action_levels('S', $name)) {
 		$l =~ /^(\S+)\s+(\S+)\s+(\S+)$/;
 		&init::delete_rl_action($name, $1, 'S');
 		}
@@ -112,8 +129,8 @@ if ($data =~ /'\Q$section\E')\n([\000-\377]*?);;/) {
 	# Found the section .. get out the su command
 	local $script = $1;
 	$script =~ s/\s+$//;
-	if ($script =~ /^\s*su\s+\-\s+(\S+)\s*<<EOF\n([\000-\377]*)EOF/) {
-		return ($1, $2);
+	if ($script =~ /^\s*su\s+\-\s+(\S+)\s*<<VIRTUALMINEOF\ncd\s*(.*)\n([\000-\377]*)VIRTUALMINEOF/) {
+		return ($1, $3, $2);
 		}
 	else {
 		return ('root', $script);
@@ -126,11 +143,12 @@ else {
 
 sub make_action_command
 {
-local ($section, $init) = @_;
+local ($section, $init, $dir) = @_;
 if ($init->{$section}) {
-	return "su - $init->{'user'} <<EOF\n".
+	return "su - $init->{'user'} <<VIRTUALMINEOF\n".
+	       "cd $dir\n".
 	       $init->{$section}."\n".
-	       "EOF\n";
+	       "VIRTUALMINEOF\n";
 	}
 else {
 	return undef;
