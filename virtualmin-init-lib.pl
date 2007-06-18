@@ -1,5 +1,4 @@
 # Functions for domain-level init scripts
-# XXX SMF
 
 do '../web-lib.pl';
 &init_config();
@@ -18,9 +17,17 @@ if ($config{'mode'} eq 'init') {
 	$init::init_mode eq "init" || return $text{'check_einit2'};
 	}
 else {
-	# XXX smf check
+	foreach my $c ("svcs", "svccfg", "svcadm") {
+		&has_command($c) || return &text('check_esmf', "<tt>$c</tt>");
+		}
 	}
 return undef;
+}
+
+# Returns 1 if actions can be started separately from their boot status
+sub can_start_actions
+{
+return $config{'mode'} eq 'init';
 }
 
 # list_domain_actions(&domain)
@@ -53,8 +60,29 @@ if ($config{'mode'} eq 'init') {
 		}
 	}
 else {
-	# Use SMF
-	# XXX
+	# Use SMF. First find virtualmin services, then get their details
+	open(SVCS, "svcs -a |");
+	while(<SVCS>) {
+		s/\r|\n//g;
+		local ($state, $when, $fmri) = split(/\s+/, $_);
+		local $usdom = $d->{'dom'};
+		$usdom =~ s/\./_/g;
+		if ($fmri =~ /^svc:\/virtualmin\/\Q$usdom\E\/([^:]+)/) {
+			# Found one for the domain .. get the commands
+			# and user
+			local $init = { 'type' => 'smf',
+					'name' => $1,
+					'fmri' => $fmri,
+					'status' => $state eq 'online' };
+			$init->{'desc'} = &get_smf_prop($fmri,
+							"tm_common_name/C");
+			$init->{'user'} = &get_smf_prop($fmri, "start/user");
+			$init->{'start'} = &get_smf_prop($fmri, "start/exec");
+			$init->{'stop'} = &get_smf_prop($fmri, "stop/exec");
+			push(@rv, $init);
+			}
+		}
+	close(SVCS);
 	}
 return @rv;
 }
@@ -82,8 +110,34 @@ if ($config{'mode'} eq 'init') {
 		}
 	}
 else {
-	# Add SMF
-	# XXX
+	# Add SMF, by taking XML template and subbing it
+	local $tmpl = &read_file_contents(
+		$config{'xml'} || "$module_root_directory/template.xml");
+	local $usdom = $d->{'dom'};
+	$usdom =~ s/\./_/g;
+	local %hash = ( 'DOM' => $usdom,
+			'DESC' => $init->{'desc'},
+			'NAME' => $init->{'name'},
+			'START' => join(';', split(/\n/, $init->{'start'})),
+			'STOP' => join(';', split(/\n/, $init->{'stop'})),
+			'USER' => $d->{'user'},
+			'GROUP' => $d->{'group'},
+			'HOME' => $d->{'home'} );
+	$tmpl = &substitute_template($tmpl, \%hash);
+	#local $temp = &transname();
+	local $temp = &tempname();
+	&open_tempfile(TEMP, ">$temp", 0, 1);
+	&print_tempfile(TEMP, $tmpl);
+	&close_tempfile(TEMP);
+	local $out = `svccfg import $temp 2>&1`;
+	if ($? || $out =~ /failed/) {
+		&error("<pre>".&html_escape($out)."</pre>");
+		}
+	if (!$init->{'status'}) {
+		# Make sure disabled after creation
+		&execute_command(
+			"svcadm disable /virtualmin/$usdom/$init->{'name'}");
+		}
 	}
 }
 
@@ -94,13 +148,49 @@ sub modify_domain_action
 local ($d, $oldd, $init, $oldinit) = @_;
 if ($config{'mode'} eq 'init') {
 	# Just delete old init script and re-create
-	&foreign_require("init", "init-lib.pl");
 	&delete_domain_action($oldd, $oldinit);
 	&create_domain_action($d, $init);
 	}
 else {
-	# What to do for SMF?
-	# XXX
+	# For SMF, if the domain or service name has changed, delete and
+	# re-create. Otherwise, update the parameters.
+	if ($d->{'dom'} ne $oldd->{'dom'} ||
+	    $init->{'name'} ne $oldinit->{'name'}) {
+		&delete_domain_action($oldd, $oldinit);
+		&create_domain_action($d, $init);
+		}
+	else {
+		# Update start and stop commands
+		&set_smf_prop($init->{'fmri'}, "start/exec",
+			join(';', split(/\n/, $init->{'start'})), "astring");
+		&set_smf_prop($init->{'fmri'}, "stop/exec",
+			join(';', split(/\n/, $init->{'stop'})), "astring");
+
+		# Update description
+		&set_smf_prop($init->{'fmri'}, "tm_common_name/C",
+			$init->{'desc'}, "ustring");
+
+		# Update user
+		&set_smf_prop($init->{'fmri'}, "start/user",
+			$d->{'user'}, "astring");
+		&set_smf_prop($init->{'fmri'}, "start/group",
+			$d->{'group'}, "astring");
+		&set_smf_prop($init->{'fmri'}, "stop/user",
+			$d->{'user'}, "astring");
+		&set_smf_prop($init->{'fmri'}, "stop/group",
+			$d->{'group'}, "astring");
+
+		if ($init->{'status'} && !$oldinit->{'status'}) {
+			# Enable service
+			local $out = `svcadm enable $init->{'fmri'} 2>&1`;
+			$? && &error("<pre>".&html_escape($out)."</pre>");
+			}
+		elsif (!$init->{'status'} && $oldinit->{'status'}) {
+			# Disable service
+			local $out = `svcadm disable $init->{'fmri'} 2>&1`;
+			$? && &error("<pre>".&html_escape($out)."</pre>");
+			}
+		}
 	}
 }
 
@@ -125,7 +215,9 @@ if ($config{'mode'} eq 'init') {
 	}
 else {
 	# Delete SMF service
-	# XXX
+	&execute_command("svcadm disable $init->{'fmri'}");
+	local $out = `svccfg delete $init->{'fmri'} 2>&1`;
+	&error("<pre>".&html_escape($out)."</pre>") if ($? || $out =~ /failed/);
 	}
 }
 
@@ -145,8 +237,7 @@ if ($config{'mode'} eq 'init') {
 	close(OUT);
 	}
 else {
-	# Run SMF action
-	# XXX
+	&error("SMF actions cannot be started");
 	}
 }
 
@@ -166,8 +257,7 @@ if ($config{'mode'} eq 'init') {
 	close(OUT);
 	}
 else {
-	# Run SMF action
-	# XXX
+	&error("SMF actions cannot be stopped");
 	}
 }
 
@@ -221,6 +311,37 @@ if ($init->{$section}) {
 	}
 else {
 	return undef;
+	}
+}
+
+sub get_smf_prop
+{
+local ($fmri, $name) = @_;
+$fmri =~ s/:[^:]+$//;
+local $out = `svccfg -s $fmri listprop $name`;
+if ($out =~ /^\S+\s+(astring|ustring)\s+"(.*)"/) {
+	return $2;
+	}
+elsif ($out =~ /^\S+\s+\S+\s+:default/) {
+	return undef;
+	}
+elsif ($out =~ /^\S+\s+\S+\s+(\S+)/) {
+	return $1;
+	}
+else {
+	&error("Unknown output from svccfg -s $fmri listprop $name : $out");
+	}
+}
+
+# set_smf_prop(fmri, name, value, type)
+sub set_smf_prop
+{
+local ($fmri, $name, $value, $type) = @_;
+$fmri =~ s/:[^:]+$//;
+$value = "\"$value\"" if ($type eq "ustring" || $type eq "astring");
+local $out = `svccfg -s $fmri 'setprop $name = $type: $value' 2>&1`;
+if ($? || $out =~ /failed/) {
+	&error("Failed to set SMF property $name to $value : $out");
 	}
 }
 

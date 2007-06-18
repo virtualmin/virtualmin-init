@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
+
+<service_bundle type='manifest' name='${NAME}'>
+
+<service
+	name='virtualmin/${DOM}/${NAME}'
+	type='service'
+	version='1'>
+
+	<create_default_instance enabled='true' />
+
+	<single_instance/>
+
+	<dependency
+		name='milestone'
+		grouping='require_all'
+		restart_on='none'
+		type='service'>
+		<service_fmri value='svc:/milestone/sysconfig' />
+	</dependency>
+
+	<exec_method
+		type='method'
+		name='start'
+		exec='${START}'
+		timeout_seconds='60'>
+		<method_context working_directory='${HOME}'>
+                        <method_credential user='${USER}' group='${GROUP}' />
+                </method_context>
+	</exec_method>
+
+	<exec_method
+		type='method'
+		name='stop'
+		exec='${STOP}'
+		timeout_seconds='60'>
+		<method_context working_directory='${HOME}'>
+                        <method_credential user='${USER}' group='${GROUP}' />
+                </method_context>
+	</exec_method>
+
+	<stability value='Unstable' />
+
+	<template>
+		<common_name>
+			<loctext xml:lang='C'>${DESC}
+			</loctext>
+		</common_name>
+	</template>
+</service>
+
+</service_bundle>

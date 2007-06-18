@@ -1,1 +1,2 @@
 mode=Boot system to configure,1,init-Standard init.d scripts,smf-Solaris SMF
+xml=Template XML file for new SMF actions,3,Built-in default

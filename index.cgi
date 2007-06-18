@@ -57,7 +57,9 @@ if (@allinits) {
 				  $text{'index_name'},
 				  $many ? ( $text{'index_dom'} ) : ( ),
 				  $text{'index_desc'},
-				  $text{'index_status'} ], 100, 0, \@tds);
+				  &can_start_actions() ? $text{'index_status'}
+						       : $text{'index_status2'}
+				 ], 100, 0, \@tds);
 	$green = "<font color=#00aa00>$text{'yes'}</font>";
 	$red = "<font color=#ff0000>$text{'no'}</font>";
 	foreach my $i (@allinits) {
@@ -73,8 +75,10 @@ if (@allinits) {
 	print &ui_links_row(\@links);
 	print &ui_form_end([ [ "delete", $text{'index_delete'} ],
 			     undef,
-			     [ "startnow", $text{'index_startnow'} ],
-			     [ "stopnow", $text{'index_stopnow'} ],
+			     &can_start_actions() ? (
+				     [ "startnow", $text{'index_startnow'} ],
+				     [ "stopnow", $text{'index_stopnow'} ]
+				     ) : ( ),
 			   ]);
 	}
 else {

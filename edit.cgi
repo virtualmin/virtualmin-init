@@ -44,7 +44,8 @@ print &ui_table_row($text{'edit_desc'},
 	&ui_textbox("desc", $init->{'desc'}, 60));
 
 # Enabled?
-print &ui_table_row($text{'edit_status'},
+print &ui_table_row(&can_start_actions() ? $text{'edit_status'}
+					 : $text{'edit_status2'},
 	&ui_yesno_radio("status", int($init->{'status'})));
 
 # Template, if any are available
@@ -96,8 +97,11 @@ else {
 	print &ui_form_end([ [ "save", $text{'save'} ],
 			     [ "delete", $text{'delete'} ],
 			     undef,
-			     [ "startnow", $text{'edit_startnow'} ],
-			     [ "stopnow", $text{'edit_stopnow'} ] ]);
+			     &can_start_actions() ? (
+				     [ "startnow", $text{'edit_startnow'} ],
+				     [ "stopnow", $text{'edit_stopnow'} ]
+				     ) : ( )
+			   ]);
 	}
 
 &ui_print_footer("index.cgi?dom=$in{'dom'}", $text{'index_return'});
