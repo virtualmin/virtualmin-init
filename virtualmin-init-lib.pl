@@ -1,5 +1,4 @@
 # Functions for domain-level init scripts
-# XXX malicious use of VIRTUALMINEOF, or ` within su block
 # XXX SMF
 
 do '../web-lib.pl';
@@ -196,7 +195,7 @@ if ($data =~ /'\Q$section\E'\)\n([\000-\377]*?);;/) {
 	# Found the section .. get out the su command
 	local $script = $1;
 	$script =~ s/\s+$//;
-	if ($script =~ /^\s*su\s+\-\s+(\S+)\s*<<VIRTUALMINEOF\n\s*cd\s*(\S+)\n([\000-\377]*)VIRTUALMINEOF/) {
+	if ($script =~ /^\s*su\s+\-\s+(\S+)\s*<<'VIRTUALMINEOF'\n\s*cd\s*(\S+)\n([\000-\377]*)VIRTUALMINEOF/) {
 		local @rv = ($1, $3, $2);
 		$rv[1] =~ s/(^|\n)\s*/$1/g;	# strip spaces at start of lines
 		return @rv;
@@ -214,7 +213,8 @@ sub make_action_command
 {
 local ($section, $init, $dir) = @_;
 if ($init->{$section}) {
-	return "su - $init->{'user'} <<VIRTUALMINEOF\n".
+	$init->{$section} =~ /VIRTUALMINEOF/ && &error($text{'save_eeof'});
+	return "su - $init->{'user'} <<'VIRTUALMINEOF'\n".
 	       "cd $dir\n".
 	       $init->{$section}.
 	       "VIRTUALMINEOF\n";

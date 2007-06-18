@@ -76,10 +76,10 @@ else {
 		$in{'stop'} =~ s/\r//g;
 		$init->{'stop'} = $in{'stop'};
 		}
-	$tmpl->{'start'} =~ s/\n+$//g;
-	$tmpl->{'start'} .= "\n";
-	$tmpl->{'stop'} =~ s/\n+$//g;
-	$tmpl->{'stop'} .= "\n" if ($tmpl->{'stop'} =~ /\S/);
+	$init->{'start'} =~ s/\n+$//g;
+	$init->{'start'} .= "\n";
+	$init->{'stop'} =~ s/\n+$//g;
+	$init->{'stop'} .= "\n" if ($init->{'stop'} =~ /\S/);
 	$init->{'user'} = $d->{'user'};
 
 	# Create or save
