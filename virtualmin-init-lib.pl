@@ -1,4 +1,9 @@
 # Functions for domain-level init scripts
+# XXX handle SMF failure modes like 'maintenance'
+# XXX :kill shutdown action
+# XXX re-apply templates when changed
+# XXX domain substitions in start/stop commands
+# XXX per-template XML
 
 do '../web-lib.pl';
 &init_config();
@@ -87,11 +92,11 @@ else {
 return @rv;
 }
 
-# create_domain_action(&domain, &action)
+# create_domain_action(&domain, &action, [&template])
 # Creates the init script or SMF service for some new action
 sub create_domain_action
 {
-local ($d, $init) = @_;
+local ($d, $init, $tmpl) = @_;
 if ($config{'mode'} eq 'init') {
 	# Add init script
 	&foreign_require("init", "init-lib.pl");
@@ -111,8 +116,10 @@ if ($config{'mode'} eq 'init') {
 	}
 else {
 	# Add SMF, by taking XML template and subbing it
-	local $tmpl = &read_file_contents(
-		$config{'xml'} || "$module_root_directory/template.xml");
+	local $xml = $tmpl->{'xml'} ||
+		     &read_file_contents(
+			$config{'xml'} ||
+			"$module_root_directory/template.xml");
 	local $usdom = $d->{'dom'};
 	$usdom =~ s/\./_/g;
 	local %hash = ( 'DOM' => $usdom,
@@ -123,11 +130,10 @@ else {
 			'USER' => $d->{'user'},
 			'GROUP' => $d->{'group'},
 			'HOME' => $d->{'home'} );
-	$tmpl = &substitute_template($tmpl, \%hash);
-	#local $temp = &transname();
-	local $temp = &tempname();
+	$xml = &substitute_template($xml, \%hash);
+	local $temp = &transname();
 	&open_tempfile(TEMP, ">$temp", 0, 1);
-	&print_tempfile(TEMP, $tmpl);
+	&print_tempfile(TEMP, $xml);
 	&close_tempfile(TEMP);
 	local $out = `svccfg import $temp 2>&1`;
 	if ($? || $out =~ /failed/) {
@@ -357,6 +363,7 @@ foreach my $f (readdir(DIR)) {
 		&read_file("$action_templates_dir/$f", \%tmpl);
 		$tmpl{'start'} =~ s/\t/\n/g;
 		$tmpl{'stop'} =~ s/\t/\n/g;
+		$tmpl{'xml'} =~ s/\t/\n/g;
 		push(@rv, \%tmpl);
 		}
 	}
@@ -373,6 +380,7 @@ $tmpl->{'id'} ||= time();
 local %savetmpl = %$tmpl;
 $savetmpl{'start'} =~ s/\n/\t/g;
 $savetmpl{'stop'} =~ s/\n/\t/g;
+$savetmpl{'xml'} =~ s/\n/\t/g;
 &make_dir($action_templates_dir, 0700);
 &write_file("$action_templates_dir/$tmpl->{'id'}", \%savetmpl);
 }

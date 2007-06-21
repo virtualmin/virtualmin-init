@@ -59,6 +59,7 @@ else {
 		$clash && &error($text{'save_eclash'});
 		}
 	$init->{'name'} = $in{'name'};
+	$in{'desc'} =~ /\S/ || &error($text{'save_edesc'});
 	$init->{'desc'} = $in{'desc'};
 	$init->{'status'} = $in{'status'};
 	if ($in{'new'} && $in{'tmpl'}) {
@@ -84,7 +85,7 @@ else {
 
 	# Create or save
 	if ($in{'new'}) {
-		&create_domain_action($d, $init);
+		&create_domain_action($d, $init, $tmpl);
 		}
 	else {
 		&modify_domain_action($d, $d, $init, $oldinit);
