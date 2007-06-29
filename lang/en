@@ -1,0 +1,105 @@
+feat_name=Bootup actions
+feat_label=Can create bootup actions?
+feat_eunix=Bootup actions can only be enabled for domains with a Unix user
+feat_bname=Bootup actions for the virtual server
+feat_rename=Updating bootup actions ..
+feat_norename=.. none found
+feat_delete=Deleting bootup actions for virtual server ..
+feat_losing=All bootup actions will be deleted
+feat_backup=Backing up bootup actions ..
+feat_restore=Re-creating bootup actions ..
+
+links_link=Bootup Actions
+
+limits_max=Maximum allowed bootup actions
+limit_emax=Missing or invalid maximum number of bootup actions
+
+check_einit=The Bootup and Shutdown Action Webmin module is not installed
+check_einit2=The system does not use <tt>init.d</tt>-style boot actions
+check_esmf=The command $1 used for SMF configuration is not installed
+
+index_title=Virtualmin Bootup Actions
+index_name=Action name
+index_desc=Description
+index_status=At boot?
+index_status2=Started?
+index_dom=Domain
+index_none=No bootup actions are associated with this virtual server yet.
+index_none2=No bootup actions are associated with any of your virtual servers yet.
+index_delete=Delete Selected
+index_startnow=Start Selected
+index_stopnow=Stop Selected
+index_add=Add a new bootup action.
+index_add2=Add <i>$1</i>.
+index_return=list of actions
+index_hitmax=You have reached your limit of $1 bootup actions.
+index_max=You currently have $1 bootup actions across all virtual servers, out of a limit of $2.
+limit_max2=You are allowed to create at most $1 bootup actions across all virtual servers.
+index_tdesc2=The templates defined below can be used when creating new bootup actions, to set the default start and stop scripts.
+index_tadd=Add a new action template.
+index_tdesc=Template description
+index_tstart=Startup commands
+index_tstop=Shutdown commands
+index_tnone=No template actions have been defined yet.
+index_maint=Failed
+
+edit_title1=Create Bootup Action
+edit_title2=Edit Bootup Action
+edit_header=Bootup script details
+edit_dom=Virtual server
+edit_name=Action name
+edit_status=Start at reboot?
+edit_status2=Started?
+edit_maint=Failed to start
+edit_startlog=Recent log messages
+edit_start=Commands to run at startup
+edit_stop=Commands to run on shutdown
+edit_stopkill=Kill all started processes
+edit_stopbelow=Run commands below ..
+edit_startnow=Start Now
+edit_stopnow=Stop Now
+edit_desc=Description
+edit_tmpl=Template for new action
+edit_manual=Custom action
+
+save_err=Failed to save action
+save_err2=Failed to delete action
+save_ecannot=You are not allowed to manage actions in this domain
+save_ename=Missing or invalid action name
+save_eclash=An action with the same name already exists
+save_edesc=No description entered
+save_estart=Missing script to run on startup
+save_etoomany=You are not allowed to create any more bootup actions, as you have reached the limit of $1 across all virtual servers
+save_eeof=The special delimiter VIRTUALMINEOF cannot be used in startup or shutdown scripts
+save_eptype0=Missing value for $1
+save_eptype1=Missing or non-numeric value for $1
+
+start_title=Start Action
+start_starting=Running start script for action $1 ..
+start_titles=Start Actions
+stop_title=Stop Action
+stop_titles=Stop Actions
+stop_stopping=Running stop script for action $1 ..
+
+mass_enone=No bootup actions selected
+
+tmpl_title1=Create Action Template
+tmpl_title2=Edit Action Template
+tmpl_header=Action template details
+tmpl_desc=Template description
+tmpl_ecannot=You are not allowed to manage templates
+tmpl_err=Failed to save template
+tmpl_edesc=Missing description
+tmpl_estart=Missing startup script
+tmpl_xml=SMF service XML definition
+tmpl_xmldef=Global default
+tmpl_xmlbelow=Entered below ..
+tmpl_exml=Missing SMF service XML
+tmpl_header2=User-defined parameters (optional)
+tmpl_pname=Parameter name
+tmpl_ptype=Type
+tmpl_pdesc=Description
+tmpl_ptype0=String
+tmpl_ptype1=Number
+tmpl_epname=Invalid name for parameter $1 - only letters, numbers and _ are allowed
+tmpl_epdesc=Missing description for parameter $1
