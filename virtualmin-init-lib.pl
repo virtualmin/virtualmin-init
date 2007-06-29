@@ -1,9 +1,5 @@
 # Functions for domain-level init scripts
-# XXX handle SMF failure modes like 'maintenance'
-# XXX :kill shutdown action
 # XXX re-apply templates when changed
-# XXX domain substitions in start/stop commands
-# XXX per-template XML
 
 do '../web-lib.pl';
 &init_config();
@@ -78,13 +74,23 @@ else {
 			local $init = { 'type' => 'smf',
 					'name' => $1,
 					'fmri' => $fmri,
-					'status' => $state eq 'online' };
+					'status' =>
+						$state eq 'online' ? 1 :
+						$state eq 'maintenance' ? 2 : 0,
+					'smfstate' => $state };
 			$init->{'desc'} = &get_smf_prop($fmri,
 							"tm_common_name/C");
 			$init->{'user'} = &get_smf_prop($fmri, "start/user");
 			$init->{'start'} = &get_smf_prop($fmri, "start/exec");
 			$init->{'stop'} = &get_smf_prop($fmri, "stop/exec");
 			push(@rv, $init);
+
+			# Get the last logs
+			local $out = `svcs -l $fmri`;
+			if ($out =~ /logfile\s+(\S+)/) {
+				$init->{'startlogfile'} = $1;
+				$init->{'startlog'} = `tail $init->{'startlogfile'} 2>/dev/null`;
+				}
 			}
 		}
 	close(SVCS);
@@ -130,6 +136,8 @@ else {
 			'USER' => $d->{'user'},
 			'GROUP' => $d->{'group'},
 			'HOME' => $d->{'home'} );
+	$hash{'START'} =~ s/\n*$//g;
+	$hash{'STOP'} =~ s/\n*$//g;
 	$xml = &substitute_template($xml, \%hash);
 	local $temp = &transname();
 	&open_tempfile(TEMP, ">$temp", 0, 1);
@@ -186,14 +194,24 @@ else {
 		&set_smf_prop($init->{'fmri'}, "stop/group",
 			$d->{'group'}, "astring");
 
-		if ($init->{'status'} && !$oldinit->{'status'}) {
+		if ($init->{'status'} == 1 && $oldinit->{'status'} == 0) {
 			# Enable service
 			local $out = `svcadm enable $init->{'fmri'} 2>&1`;
 			$? && &error("<pre>".&html_escape($out)."</pre>");
 			}
-		elsif (!$init->{'status'} && $oldinit->{'status'}) {
+		elsif ($init->{'status'} == 0 && $oldinit->{'status'} == 1) {
 			# Disable service
 			local $out = `svcadm disable $init->{'fmri'} 2>&1`;
+			$? && &error("<pre>".&html_escape($out)."</pre>");
+			}
+		elsif ($init->{'status'} == 1 && $oldinit->{'status'} == 2) {
+			# Clear and enable
+			local $out = `svcadm clear $init->{'fmri'} && svcadm enable $init->{'fmri'} 2>&1`;
+			$? && &error("<pre>".&html_escape($out)."</pre>");
+			}
+		elsif ($init->{'status'} == 0 && $oldinit->{'status'} == 2) {
+			# Just clear
+			local $out = `svcadm clear $init->{'fmri'} 2>&1`;
 			$? && &error("<pre>".&html_escape($out)."</pre>");
 			}
 		}

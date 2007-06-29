@@ -23,9 +23,14 @@ else {
 	$in{'start'} =~ s/\r//g;
 	$in{'start'} =~ /\S/ || &error($text{'tmpl_estart'});
 	$tmpl->{'start'} = $in{'start'};
-	$in{'stop'} =~ s/\r//g;
-	$tmpl->{'stop'} = $in{'stop'};
-	if ($in{'xml_def'}) {
+	if ($in{'stop_def'}) {
+		$tmpl->{'stop'} = ':kill';
+		}
+	else {
+		$in{'stop'} =~ s/\r//g;
+		$tmpl->{'stop'} = $in{'stop'};
+		}
+	if ($in{'xml_def'} || $config{'mode'} ne 'smf') {
 		delete($tmpl->{'xml'});
 		}
 	else {

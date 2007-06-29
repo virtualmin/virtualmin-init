@@ -14,11 +14,17 @@ if (!$in{'new'}) {
 		       &list_domain_actions($d);
 	}
 else {
+	# Adding a new action
 	$init = { 'status' => 1 };
+	($tmpl) = grep { $_->{'id'} eq $in{'tmpl'} } &list_action_templates();
+	if ($config{'mode'} eq 'smf' && !$tmpl) {
+		$init->{'stop'} = ':kill';
+		}
 	}
 
 print &ui_form_start("save.cgi", "post");
 print &ui_hidden("new", $in{'new'});
+print &ui_hidden("tmpl", $in{'tmpl'});
 print &ui_hidden("old", $in{'name'});
 if ($in{'dom'}) {
 	print &ui_hidden("dom", $in{'dom'});
@@ -44,50 +50,68 @@ print &ui_table_row($text{'edit_desc'},
 	&ui_textbox("desc", $init->{'desc'}, 60));
 
 # Enabled?
-print &ui_table_row(&can_start_actions() ? $text{'edit_status'}
-					 : $text{'edit_status2'},
-	&ui_yesno_radio("status", int($init->{'status'})));
-
-# Template, if any are available
-@tmpls = &list_action_templates();
-print "<script>\n";
-print "function select_template(id)\n";
-print "{\n";
-print "form = document.forms[0]\n";
-print "if (id == 0) {\n";
-print "  form.start.value = '';\n";
-print "  form.start.disabled = false;\n";
-print "  form.stop.value = '';\n";
-print "  form.stop.disabled = false;\n";
-print "  }\n";
-foreach $tmpl (@tmpls) {
-	print "else if (id == $tmpl->{'id'}) {\n";
-	$tmpl->{'start'} =~ s/\n/\\n/g;
-	$tmpl->{'stop'} =~ s/\n/\\n/g;
-	print "  form.start.value = '$tmpl->{'start'}';\n";
-	print "  form.start.disabled = true;\n";
-	print "  form.stop.value = '$tmpl->{'stop'}';\n";
-	print "  form.stop.disabled = true;\n";
-	print "  }\n";
+if (&can_start_actions()) {
+	# Init mode, in which we can just control if started at boot
+	print &ui_table_row($text{'edit_status'},
+		&ui_yesno_radio("status", int($init->{'status'})));
 	}
-print "}\n";
-print "</script>\n";
-if ($in{'new'} && @tmpls) {
-	print &ui_table_row($text{'edit_tmpl'},
-		&ui_select("tmpl", 0,
-		  [ [ 0, "&lt;$text{'edit_manual'}&gt;" ],
-		    map { [ $_->{'id'}, $_->{'desc'} ] } @tmpls ],
-		  1, 0, 0, 0,
-		  "onChange='select_template(options[selectedIndex].value)'"));
+else {
+	# SMF mode, in which we can see the real status
+	my @opts = ( [ 1, $text{'yes'} ],
+		     [ 0, $text{'no'} ] );
+	if ($init->{'status'} == 2) {
+		push(@opts, [ 2, $text{'edit_maint'} ]);
+		}
+	print &ui_table_row($text{'edit_status2'},
+			    &ui_radio("status", $init->{'status'}, \@opts));
+	if ($init->{'status'} == 2) {
+		# Show failure log
+		print &ui_table_row($text{'edit_startlog'},
+			"<pre>".&html_escape($init->{'startlog'})."</pre>");
+		}
 	}
 
-# Start code
-print &ui_table_row($text{'edit_start'},
-	&ui_textarea("start", $init->{'start'}, 5, 80));
+if ($tmpl) {
+	# Adding from template .. show name
+	print &ui_table_row($text{'edit_tmpl'}, $tmpl->{'desc'});
 
-# Stop code
-print &ui_table_row($text{'edit_stop'},
-	&ui_textarea("stop", $init->{'stop'}, 5, 80));
+	# Show parameters
+	for($i=0; defined($tmpl->{'pname_'.$i}); $i++) {
+		$tt = $tmpl->{'ptype_'.$i};
+		$tn = 'param_'.$tmpl->{'pname_'.$i};
+		print &ui_table_row($tmpl->{'pdesc_'.$i},
+			$tt == 0 ? &ui_textbox($tn, undef, 50) :
+			$tt == 1 ? &ui_textbox($tn, undef, 10) : undef);
+		}
+
+	# Show fixed code for start and stop
+	$start = $tmpl->{'start'};
+	$start = &substitute_template($start, $d) if ($d);
+	print &ui_table_row($text{'edit_start'},
+			    "<pre>".&html_escape($start)."</pre>");
+
+	$stop = $tmpl->{'stop'};
+	$stop = &substitute_template($stop, $d) if ($d);
+	print &ui_table_row($text{'edit_stop'},
+			    "<pre>".&html_escape($stop)."</pre>");
+	}
+else {
+	# Start code
+	print &ui_table_row($text{'edit_start'},
+		&ui_textarea("start", $init->{'start'}, 5, 80));
+
+	# Stop code
+	if ($config{'mode'} eq 'smf') {
+		$stopdef = &ui_radio(
+			     "stop_def", $init->{'stop'} eq ':kill' ? 1 : 0,
+			     [ [ 1, $text{'edit_stopkill'} ],
+			       [ 0, $text{'edit_stopbelow'} ] ])."<br>\n";
+		}
+	print &ui_table_row($text{'edit_stop'},
+		$stopdef.
+		&ui_textarea("stop", $init->{'stop'} eq ':kill' ? undef :
+					$init->{'stop'}, 5, 80));
+	}
 
 print &ui_table_end();
 if ($in{'new'}) {

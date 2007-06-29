@@ -26,8 +26,15 @@ print &ui_table_row($text{'edit_start'},
 	&ui_textarea("start", $tmpl->{'start'}, 5, 80));
 
 # Stop code
+if ($config{'mode'} eq 'smf') {
+	$stopdef = &ui_radio("stop_def", $tmpl->{'stop'} eq ':kill' ? 1 : 0,
+			     [ [ 1, $text{'edit_stopkill'} ],
+			       [ 0, $text{'edit_stopbelow'} ] ])."<br>\n";
+	}
 print &ui_table_row($text{'edit_stop'},
-	&ui_textarea("stop", $tmpl->{'stop'}, 5, 80));
+	$stopdef.
+	&ui_textarea("stop", $tmpl->{'stop'} eq ':kill' ? undef :
+				$tmpl->{'stop'}, 5, 80));
 
 # XML template
 if ($config{'mode'} eq 'smf') {

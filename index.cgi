@@ -6,6 +6,7 @@ require './virtualmin-init-lib.pl';
 $d = $in{'dom'} ? &virtual_server::get_domain($in{'dom'}) : undef;
 &ui_print_header($d ? &virtual_server::domain_in($d) : undef,
 		 $text{'index_title'}, "", undef, 0, 1);
+@templates = &list_action_templates();
 
 # Work out domains to work on
 if ($d) {
@@ -47,6 +48,11 @@ if ($access{'max'}) {
 if (!$no_create) {
 	@links = ( "<a href='edit.cgi?new=1&dom=$in{'dom'}'>".
 		   "$text{'index_add'}</a>" );
+	foreach $tmpl (@templates) {
+		push(@links, "<a href='edit.cgi?new=1&dom=$in{'dom'}&".
+			     "tmpl=$tmpl->{'id'}'>".
+			     &text('index_add2', $tmpl->{'desc'})."</a>");
+		}
 	}
 if (@allinits) {
 	unshift(@links, &select_all_link("d"), &select_invert_link("d"));
@@ -62,13 +68,17 @@ if (@allinits) {
 				 ], 100, 0, \@tds);
 	$green = "<font color=#00aa00>$text{'yes'}</font>";
 	$red = "<font color=#ff0000>$text{'no'}</font>";
+	$orange = "<font color=#ffaa00>$text{'index_maint'}</font>";
 	foreach my $i (@allinits) {
 		print &ui_checked_columns_row([
 			"<a href='edit.cgi?name=$i->{'name'}&dom=$i->{'dom'}'>".
 			 "$i->{'name'}</a>",
 			$many ? ( $i->{'domname'} ) : ( ),
 			$i->{'desc'},
-			$i->{'status'} ? $green : $red ],
+			$i->{'status'} == 1 ? $green :
+			$i->{'status'} == 2 ? $orange :
+					      $red
+			],
 			\@tds, "d", $i->{'dom'}."/".$i->{'name'});
 		}
 	print &ui_columns_end();
@@ -95,7 +105,6 @@ else {
 if ($access{'templates'}) {
 	print "<hr>\n";
 	print $text{'index_tdesc2'},"<p>\n";
-	@templates = &list_action_templates();
 	@links = ( "<a href='edit_tmpl.cgi?new=1'>$text{'index_tadd'}</a>" );
 	if (@templates) {
 		print &ui_links_row(\@links);

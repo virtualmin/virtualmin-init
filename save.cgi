@@ -66,16 +66,40 @@ else {
 		# From template
 		($tmpl) = grep { $_->{'id'} == $in{'tmpl'} }
 				&list_action_templates();
-		$init->{'start'} = $tmpl->{'start'};
-		$init->{'stop'} = $tmpl->{'stop'};
+		%thash = %$d;
+		for($i=0; defined($tmpl->{'pname_'.$i}); $i++) {
+			$td = $tmpl->{'pdesc_'.$i};
+			$tt = $tmpl->{'ptype_'.$i};
+			$tn = $tmpl->{'pname_'.$i};
+			$tv = $in{'param_'.$tn};
+			if ($tt == 0) {
+				$tv =~ /\S/ ||
+					&error(&text('save_eptype0', $td));
+				$thash{$tn} = $tv;
+				}
+			elsif ($tt == 1) {
+				$tv =~ /^\d+$/ ||
+					&error(&text('save_eptype1', $td));
+				$thash{$tn} = $tv;
+				}
+			}
+		$init->{'start'} = &substitute_template(
+					$tmpl->{'start'}, \%thash);
+		$init->{'stop'} = &substitute_template(
+					$tmpl->{'stop'}, \%thash);
 		}
 	else {
 		# Manually entered
 		$in{'start'} =~ s/\r//g;
 		$in{'start'} =~ /\S/ || &error($text{'save_estart'});
 		$init->{'start'} = $in{'start'};
-		$in{'stop'} =~ s/\r//g;
-		$init->{'stop'} = $in{'stop'};
+		if ($in{'stop_def'}) {
+			$init->{'stop'} = ':kill';
+			}
+		else {
+			$in{'stop'} =~ s/\r//g;
+			$init->{'stop'} = $in{'stop'};
+			}
 		}
 	$init->{'start'} =~ s/\n+$//g;
 	$init->{'start'} .= "\n";
