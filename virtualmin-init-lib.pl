@@ -83,14 +83,8 @@ else {
 			$init->{'user'} = &get_smf_prop($fmri, "start/user");
 			$init->{'start'} = &get_smf_prop($fmri, "start/exec");
 			$init->{'stop'} = &get_smf_prop($fmri, "stop/exec");
+			$init->{'startlog'} = &get_smf_log_tail($init);
 			push(@rv, $init);
-
-			# Get the last logs
-			local $out = `svcs -l $fmri`;
-			if ($out =~ /logfile\s+(\S+)/) {
-				$init->{'startlogfile'} = $1;
-				$init->{'startlog'} = `tail $init->{'startlogfile'} 2>/dev/null`;
-				}
 			}
 		}
 	close(SVCS);
@@ -261,7 +255,16 @@ if ($config{'mode'} eq 'init') {
 	close(OUT);
 	}
 else {
-	&error("SMF actions cannot be started");
+	# Change status to enabled
+	if ($init->{'status'} == 2) {
+		# Clear maintenance mode first
+		local $out = `svcadm clear $init->{'fmri'} 2>&1`;
+		print &html_escape($out);
+		}
+	local $out = `svcadm enable $init->{'fmri'} 2>&1`;
+	print &html_escape($out);
+	sleep(5);	# Wait for log
+	print &html_escape(&get_smf_log_tail($init));
 	}
 }
 
@@ -281,8 +284,48 @@ if ($config{'mode'} eq 'init') {
 	close(OUT);
 	}
 else {
-	&error("SMF actions cannot be stopped");
+	# Change status to disabled
+	local $out = `svcadm disable $init->{'fmri'} 2>&1`;
+	print &html_escape($out);
+	sleep(5);	# Wait for log
+	print &html_escape(&get_smf_log_tail($init));
 	}
+}
+
+# restart_domain_action(&domain, &init)
+# Stop and then start some init script, and output the results
+sub restart_domain_action
+{
+local ($d, $init) = @_;
+if ($config{'mode'} eq 'init') {
+	&stop_domain_action($d, $init);
+	&start_domain_action($d, $init);
+	}
+else {
+	# Use SMF's restart feature
+	local $out = `svcadm restart $init->{'fmri'} 2>&1`;
+	print &html_escape($out);
+	sleep(5);	# Wait for log
+	print &html_escape(&get_smf_log_tail($init));
+	}
+}
+
+# get_smf_log_tail(&init, [lines])
+# Returns the last N (10 by default) lines from an action's SMF log
+sub get_smf_log_tail
+{
+local ($init, $lines) = @_;
+$lines ||= 10;
+if (!$init->{'startlogfile'}) {
+	local $out = `svcs -l $init->{'fmri'}`;
+	if ($out =~ /logfile\s+(\S+)/) {
+		$init->{'startlogfile'} = $1;
+		}
+	}
+if ($init->{'startlogfile'}) {
+	return `tail -$lines $init->{'startlogfile'} 2>/dev/null`;
+	}
+return undef;
 }
 
 # count_user_actions()

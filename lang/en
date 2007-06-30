@@ -29,6 +29,7 @@ index_none2=No bootup actions are associated with any of your virtual servers ye
 index_delete=Delete Selected
 index_startnow=Start Selected
 index_stopnow=Stop Selected
+index_restartnow=Restart Selected
 index_add=Add a new bootup action.
 index_add2=Add <i>$1</i>.
 index_return=list of actions
@@ -80,6 +81,9 @@ start_titles=Start Actions
 stop_title=Stop Action
 stop_titles=Stop Actions
 stop_stopping=Running stop script for action $1 ..
+restart_title=Restart Action
+restart_starting=Running restart script for action $1 ..
+restart_titles=Restart Actions
 
 mass_enone=No bootup actions selected
 
@@ -101,5 +105,6 @@ tmpl_ptype=Type
 tmpl_pdesc=Description
 tmpl_ptype0=String
 tmpl_ptype1=Number
+tmpl_ptype2=File
 tmpl_epname=Invalid name for parameter $1 - only letters, numbers and _ are allowed
 tmpl_epdesc=Missing description for parameter $1

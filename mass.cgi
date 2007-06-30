@@ -52,6 +52,20 @@ elsif ($in{'stopnow'}) {
 
 	&ui_print_footer($idx, $text{'index_return'});
 	}
+elsif ($in{'restartnow'}) {
+	# Restart them in series
+	&ui_print_unbuffered_header(undef, $text{'restart_titles'}, "");
+
+	foreach $di (@dominits) {
+		print &text('restart_restarting',
+			    "<tt>$di->[1]->{'name'}</tt>"),"\n";
+		print "<pre>";
+		$ex = &restart_domain_action($di->[0], $di->[1]);
+		print "</pre>";
+		}
+
+	&ui_print_footer($idx, $text{'index_return'});
+	}
 else {
 	&error("No button clicked!");
 	}

@@ -59,7 +59,9 @@ for($i=0; $i < $pmax+3; $i++) {
 		&ui_textbox("pname_$i", $tmpl->{'pname_'.$i}, 10),
 		&ui_select("ptype_$i", $tmpl->{'ptype_'.$i},
 			   [ [ 0, $text{'tmpl_ptype0'} ],
-			     [ 1, $text{'tmpl_ptype1'} ] ]),
+			     [ 1, $text{'tmpl_ptype1'} ],
+			     [ 2, $text{'tmpl_ptype2'} ],
+			   ]),
 		&ui_textbox("pdesc_$i", $tmpl->{'pdesc_'.$i}, 50),
 		]);
 	}

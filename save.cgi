@@ -72,7 +72,7 @@ else {
 			$tt = $tmpl->{'ptype_'.$i};
 			$tn = $tmpl->{'pname_'.$i};
 			$tv = $in{'param_'.$tn};
-			if ($tt == 0) {
+			if ($tt == 0 || $tt == 2) {
 				$tv =~ /\S/ ||
 					&error(&text('save_eptype0', $td));
 				$thash{$tn} = $tv;

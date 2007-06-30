@@ -81,7 +81,10 @@ if ($tmpl) {
 		$tn = 'param_'.$tmpl->{'pname_'.$i};
 		print &ui_table_row($tmpl->{'pdesc_'.$i},
 			$tt == 0 ? &ui_textbox($tn, undef, 50) :
-			$tt == 1 ? &ui_textbox($tn, undef, 10) : undef);
+			$tt == 1 ? &ui_textbox($tn, undef, 10) :
+			$tt == 2 ? &ui_textbox($tn, undef, 50).
+				    &file_chooser_button($tn) :
+				   undef);
 		}
 
 	# Show fixed code for start and stop

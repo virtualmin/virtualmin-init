@@ -85,10 +85,9 @@ if (@allinits) {
 	print &ui_links_row(\@links);
 	print &ui_form_end([ [ "delete", $text{'index_delete'} ],
 			     undef,
-			     &can_start_actions() ? (
-				     [ "startnow", $text{'index_startnow'} ],
-				     [ "stopnow", $text{'index_stopnow'} ]
-				     ) : ( ),
+			     [ "startnow", $text{'index_startnow'} ],
+			     [ "stopnow", $text{'index_stopnow'} ],
+			     [ "restartnow", $text{'index_restartnow'} ]
 			   ]);
 	}
 else {
