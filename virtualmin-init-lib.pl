@@ -1,5 +1,4 @@
 # Functions for domain-level init scripts
-# XXX re-apply templates when changed
 
 do '../web-lib.pl';
 &init_config();
@@ -68,7 +67,8 @@ else {
 		local ($state, $when, $fmri) = split(/\s+/, $_);
 		local $usdom = $d->{'dom'};
 		$usdom =~ s/\./_/g;
-		if ($fmri =~ /^svc:\/virtualmin\/\Q$usdom\E\/([^:]+)/) {
+		if ($fmri =~ /^svc:\/virtualmin\/\Q$usdom\E\/(.+):default$/ ||
+		    $fmri =~ /^svc:\/virtualmin\/[^\/]+\/\Q$usdom\E\/(.+)/) {
 			# Found one for the domain .. get the commands
 			# and user
 			local $init = { 'type' => 'smf',
@@ -133,18 +133,26 @@ else {
 	$hash{'START'} =~ s/\n*$//g;
 	$hash{'STOP'} =~ s/\n*$//g;
 	$xml = &substitute_template($xml, \%hash);
-	local $temp = &transname();
+	#local $temp = &transname();
+	local $temp = &tempname();
 	&open_tempfile(TEMP, ">$temp", 0, 1);
 	&print_tempfile(TEMP, $xml);
 	&close_tempfile(TEMP);
-	local $out = `svccfg import $temp 2>&1`;
+	local $out = `svccfg -v import $temp 2>&1`;
 	if ($? || $out =~ /failed/) {
 		&error("<pre>".&html_escape($out)."</pre>");
+		}
+	# Work out FMRI
+	if ($out =~ /Refreshed\s+(svc:.*)\./) {
+		$init->{'fmri'} = $1;
+		}
+	else {
+		$init->{'fmri'} = "svc:/virtualmin/$usdom/$init->{'name'}";
 		}
 	if (!$init->{'status'}) {
 		# Make sure disabled after creation
 		&execute_command(
-			"svcadm disable /virtualmin/$usdom/$init->{'name'}");
+			"svcadm disable $init->{'fmri'}");
 		}
 	}
 }
@@ -234,7 +242,8 @@ if ($config{'mode'} eq 'init') {
 else {
 	# Delete SMF service
 	&execute_command("svcadm disable $init->{'fmri'}");
-	local $out = `svccfg delete $init->{'fmri'} 2>&1`;
+	sleep(2);	# Wait for disable
+	local $out = `svccfg delete -f $init->{'fmri'} 2>&1`;
 	&error("<pre>".&html_escape($out)."</pre>") if ($? || $out =~ /failed/);
 	}
 }
@@ -384,7 +393,7 @@ else {
 sub get_smf_prop
 {
 local ($fmri, $name) = @_;
-$fmri =~ s/:[^:]+$//;
+$fmri =~ s/:default$//;
 local $out = `svccfg -s $fmri listprop $name`;
 if ($out =~ /^\S+\s+(astring|ustring)\s+"(.*)"/) {
 	return $2;
@@ -404,7 +413,7 @@ else {
 sub set_smf_prop
 {
 local ($fmri, $name, $value, $type) = @_;
-$fmri =~ s/:[^:]+$//;
+$fmri =~ s/:default$//;
 $value = "\"$value\"" if ($type eq "ustring" || $type eq "astring");
 local $out = `svccfg -s $fmri 'setprop $name = $type: $value' 2>&1`;
 if ($? || $out =~ /failed/) {

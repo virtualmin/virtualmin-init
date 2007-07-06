@@ -69,7 +69,7 @@ if (@allinits) {
 	$green = "<font color=#00aa00>$text{'yes'}</font>";
 	$red = "<font color=#ff0000>$text{'no'}</font>";
 	$orange = "<font color=#ffaa00>$text{'index_maint'}</font>";
-	foreach my $i (@allinits) {
+	foreach my $i (sort { $a->{'name'} cmp $b->{'name'} } @allinits) {
 		print &ui_checked_columns_row([
 			"<a href='edit.cgi?name=$i->{'name'}&dom=$i->{'dom'}'>".
 			 "$i->{'name'}</a>",
