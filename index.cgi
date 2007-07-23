@@ -71,8 +71,8 @@ if (@allinits) {
 	$orange = "<font color=#ffaa00>$text{'index_maint'}</font>";
 	foreach my $i (sort { $a->{'name'} cmp $b->{'name'} } @allinits) {
 		print &ui_checked_columns_row([
-			"<a href='edit.cgi?name=$i->{'name'}&dom=$i->{'dom'}'>".
-			 "$i->{'name'}</a>",
+			"<a href='edit.cgi?id=".&urlize($i->{'id'}).
+			 "&dom=$i->{'dom'}'>$i->{'name'}</a>",
 			$many ? ( $i->{'domname'} ) : ( ),
 			$i->{'desc'},
 			$i->{'status'} == 1 ? $green :
@@ -132,6 +132,9 @@ if ($access{'templates'}) {
 sub shorten_command
 {
 local ($cmd) = @_;
+if ($cmd eq ":kill") {
+	return $text{'index_kill'};
+	}
 $cmd =~ s/\n/ ; /g;
 if (length($cmd) > 60) {
 	$cmd = substr($cmd, 0, 60)." ...";

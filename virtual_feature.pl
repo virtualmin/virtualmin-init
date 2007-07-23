@@ -85,8 +85,9 @@ if ($d->{'dom'} ne $oldd->{'dom'} ||
 	&$virtual_server::first_print($text{'feat_rename'});
 	local $c = 0;
 	foreach my $init (&list_domain_actions($oldd)) {
+		local $oldinit = { %$init };
 		$init->{'user'} = $d->{'user'};
-		&modify_domain_action($d, $oldd, $init, $init);
+		&modify_domain_action($d, $oldd, $init, $oldinit);
 		$c++;
 		}
 	if ($c) {

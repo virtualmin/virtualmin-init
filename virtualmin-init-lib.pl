@@ -1,4 +1,6 @@
 # Functions for domain-level init scripts
+# XXX make sure ${USER} is updated on renaming?
+# XXX preserve template on modify FMRI
 
 do '../web-lib.pl';
 &init_config();
@@ -45,7 +47,8 @@ if ($config{'mode'} eq 'init') {
 		if ($a =~ /^\Q$d->{'dom'}\E_(\S+)$/) {
 			# Found one for the domain
 			local $init = { 'type' => 'init',
-					'name' => $1 };
+					'name' => $1,
+					'id' => $1 };
 			$init->{'desc'} = &init::init_description(
 					    &init::action_filename($a), { });
 			$init->{'status'} = &init::action_status($a) == 2;
@@ -68,12 +71,13 @@ else {
 		local $usdom = $d->{'dom'};
 		$usdom =~ s/\./_/g;
 		if ($fmri =~ /^svc:\/virtualmin\/\Q$usdom\E\/(.+):default$/ ||
-		    $fmri =~ /^svc:\/virtualmin\/[^\/]+\/\Q$usdom\E\/(.+)/) {
+		    $fmri =~ /^svc:\/virtualmin\/[^\/]+\/\Q$usdom\E\/([^:]+):([^:]+)/) {
 			# Found one for the domain .. get the commands
 			# and user
 			local $init = { 'type' => 'smf',
-					'name' => $1,
+					'name' => $2 || $1,
 					'fmri' => $fmri,
+					'id' => $fmri,
 					'status' =>
 						$state eq 'online' ? 1 :
 						$state eq 'maintenance' ? 2 : 0,
@@ -82,7 +86,11 @@ else {
 							"tm_common_name/C");
 			$init->{'user'} = &get_smf_prop($fmri, "start/user");
 			$init->{'start'} = &get_smf_prop($fmri, "start/exec");
+			$init->{'start'} = join("\n",
+						split(/;/, $init->{'start'}));
 			$init->{'stop'} = &get_smf_prop($fmri, "stop/exec");
+			$init->{'stop'} = join("\n",
+					       split(/;/, $init->{'stop'}));
 			$init->{'startlog'} = &get_smf_log_tail($init);
 			push(@rv, $init);
 			}
@@ -168,54 +176,95 @@ if ($config{'mode'} eq 'init') {
 	&create_domain_action($d, $init);
 	}
 else {
-	# For SMF, if the domain or service name has changed, delete and
-	# re-create. Otherwise, update the parameters.
+	# For SMF, if the domain or service name has changed, then the
+	# FMRI may have too ... so we need to export the XML, patch it,
+	# delete the service, then re-create.
+
 	if ($d->{'dom'} ne $oldd->{'dom'} ||
+	    $d->{'user'} ne $oldd->{'user'} ||
 	    $init->{'name'} ne $oldinit->{'name'}) {
-		&delete_domain_action($oldd, $oldinit);
-		&create_domain_action($d, $init);
+		# Export XML
+		local $fmri = $oldinit->{'fmri'};
+		$fmri =~ s/:[^:\/]+$//;
+		local $xml = `svccfg export $fmri`;
+		if ($?) {
+			&error("SMF XML export failed : $xml");
+			}
+
+		# Replace service name, domain name and user
+		if ($d->{'dom'} ne $oldd->{'dom'}) {
+			local $usdom = $d->{'dom'};
+			$usdom =~ s/\./_/g;
+			local $oldusdom = $d->{'dom'};
+			$oldusdom =~ s/\./_/g;
+			$xml =~ s/\Q$oldusdom\E/$usdom/g;
+			}
+		if ($d->{'user'} ne $oldd->{'user'}) {
+			local $user = $d->{'user'};
+			local $olduser = $oldd->{'user'};
+			$xml =~ s/\/\Q$olduser\E\//\/$user\//g;
+			}
+		if ($init->{'name'} ne $oldinit->{'name'}) {
+			local $name = $init->{'name'};
+			local $oldname = $oldinit->{'name'};
+			$xml =~ s/\/\Q$oldname\E'/\/$name'/g;
+			$xml =~ s/'\Q$oldname\E'/'$name'/g;
+			}
+
+		# Delete and re-import
+		local $out = `svccfg delete -f $init->{'fmri'} 2>&1`;
+		local $temp = &transname();
+		&open_tempfile(TEMP, ">$temp", 0, 1);
+		&print_tempfile(TEMP, $xml);
+		&close_tempfile(TEMP);
+		local $out = `svccfg -v import $temp 2>&1`;
+		if ($? || $out =~ /failed/) {
+			&error("SMF XML import failed : $out");
+			}
+		if ($out =~ /Refreshed\s+(svc:.*)\./) {
+			$init->{'fmri'} = $1;
+			}
 		}
-	else {
-		# Update start and stop commands
-		&set_smf_prop($init->{'fmri'}, "start/exec",
-			join(';', split(/\n/, $init->{'start'})), "astring");
-		&set_smf_prop($init->{'fmri'}, "stop/exec",
-			join(';', split(/\n/, $init->{'stop'})), "astring");
 
-		# Update description
-		&set_smf_prop($init->{'fmri'}, "tm_common_name/C",
-			$init->{'desc'}, "ustring");
+	# Update start and stop commands
+	&set_smf_prop($init->{'fmri'}, "start/exec",
+		join(';', split(/\n/, $init->{'start'})), "astring");
+	&set_smf_prop($init->{'fmri'}, "stop/exec",
+		join(';', split(/\n/, $init->{'stop'})), "astring");
 
-		# Update user
-		&set_smf_prop($init->{'fmri'}, "start/user",
-			$d->{'user'}, "astring");
-		&set_smf_prop($init->{'fmri'}, "start/group",
-			$d->{'group'}, "astring");
-		&set_smf_prop($init->{'fmri'}, "stop/user",
-			$d->{'user'}, "astring");
-		&set_smf_prop($init->{'fmri'}, "stop/group",
-			$d->{'group'}, "astring");
+	# Update description
+	&set_smf_prop($init->{'fmri'}, "tm_common_name/C",
+		$init->{'desc'}, "ustring");
 
-		if ($init->{'status'} == 1 && $oldinit->{'status'} == 0) {
-			# Enable service
-			local $out = `svcadm enable $init->{'fmri'} 2>&1`;
-			$? && &error("<pre>".&html_escape($out)."</pre>");
-			}
-		elsif ($init->{'status'} == 0 && $oldinit->{'status'} == 1) {
-			# Disable service
-			local $out = `svcadm disable $init->{'fmri'} 2>&1`;
-			$? && &error("<pre>".&html_escape($out)."</pre>");
-			}
-		elsif ($init->{'status'} == 1 && $oldinit->{'status'} == 2) {
-			# Clear and enable
-			local $out = `svcadm clear $init->{'fmri'} && svcadm enable $init->{'fmri'} 2>&1`;
-			$? && &error("<pre>".&html_escape($out)."</pre>");
-			}
-		elsif ($init->{'status'} == 0 && $oldinit->{'status'} == 2) {
-			# Just clear
-			local $out = `svcadm clear $init->{'fmri'} 2>&1`;
-			$? && &error("<pre>".&html_escape($out)."</pre>");
-			}
+	# Update user
+	&set_smf_prop($init->{'fmri'}, "start/user",
+		$d->{'user'}, "astring");
+	&set_smf_prop($init->{'fmri'}, "start/group",
+		$d->{'group'}, "astring");
+	&set_smf_prop($init->{'fmri'}, "stop/user",
+		$d->{'user'}, "astring");
+	&set_smf_prop($init->{'fmri'}, "stop/group",
+		$d->{'group'}, "astring");
+
+	if ($init->{'status'} == 1 && $oldinit->{'status'} == 0) {
+		# Enable service
+		local $out = `svcadm enable $init->{'fmri'} 2>&1`;
+		$? && &error("<pre>".&html_escape($out)."</pre>");
+		}
+	elsif ($init->{'status'} == 0 && $oldinit->{'status'} == 1) {
+		# Disable service
+		local $out = `svcadm disable $init->{'fmri'} 2>&1`;
+		$? && &error("<pre>".&html_escape($out)."</pre>");
+		}
+	elsif ($init->{'status'} == 1 && $oldinit->{'status'} == 2) {
+		# Clear and enable
+		local $out = `svcadm clear $init->{'fmri'} && svcadm enable $init->{'fmri'} 2>&1`;
+		$? && &error("<pre>".&html_escape($out)."</pre>");
+		}
+	elsif ($init->{'status'} == 0 && $oldinit->{'status'} == 2) {
+		# Just clear
+		local $out = `svcadm clear $init->{'fmri'} 2>&1`;
+		$? && &error("<pre>".&html_escape($out)."</pre>");
 		}
 	}
 }
@@ -393,32 +442,53 @@ else {
 sub get_smf_prop
 {
 local ($fmri, $name) = @_;
-$fmri =~ s/:default$//;
-local $out = `svccfg -s $fmri listprop $name`;
-if ($out =~ /^\S+\s+(astring|ustring)\s+"(.*)"/) {
-	return $2;
+local $qname = quotemeta($name);
+local $qfmri = quotemeta($fmri);
+local $out = `svcprop -p $qname $qfmri`;
+$out =~ s/\r|\n//g;
+if ($out eq '""') {
+	# Empty string
+	return "";
 	}
-elsif ($out =~ /^\S+\s+\S+\s+:default/) {
-	return undef;
-	}
-elsif ($out =~ /^\S+\s+\S+\s+(\S+)/) {
-	return $1;
-	}
-else {
-	&error("Unknown output from svccfg -s $fmri listprop $name : $out");
-	}
+$out =~ s/\\(.)/$1/g;
+return $out;
 }
 
 # set_smf_prop(fmri, name, value, type)
 sub set_smf_prop
 {
 local ($fmri, $name, $value, $type) = @_;
-$fmri =~ s/:default$//;
-$value = "\"$value\"" if ($type eq "ustring" || $type eq "astring");
-local $out = `svccfg -s $fmri 'setprop $name = $type: $value' 2>&1`;
+if ($fmri =~ /:default$/ || $name eq "tm_common_name/C") {
+	$fmri =~ s/:[^\/:]+$//;
+	}
+if ($type eq "ustring" || $type eq "astring") {
+	$value = "\"$value\"";
+	}
+local $qfmri = quotemeta($fmri);
+local $out = `svccfg -s $qfmri 'setprop $name = $type: $value' 2>&1`;
 if ($? || $out =~ /failed/) {
 	&error("Failed to set SMF property $name to $value : $out");
 	}
+}
+
+# get_started_processes(&init)
+# Returns a list of process IDs and commands started by some action. Only
+# works with SMF.
+sub get_started_processes
+{
+local ($init) = @_;
+return ( ) if ($config{'mode'} ne 'smf');
+&open_execute_command(PROCS, "svcs -p ".quotemeta($init->{'fmri'}), 1);
+while(<PROCS>) {
+	if (/^\s+\S+\s+(\d+)\s+(\S.*)/) {
+		push(@pids, $1);
+		}
+	}
+close(PROCS);
+return ( ) if (!@pids);
+&foreign_require("proc", "proc-lib.pl");
+local %pids = map { $_, 1 } @pids;
+return grep { $pids{$_->{'pid'}} } &proc::list_processes();
 }
 
 # list_action_templates()

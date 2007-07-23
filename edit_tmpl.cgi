@@ -11,6 +11,10 @@ if (!$in{'new'}) {
 	# Get the existing template
 	($tmpl) = grep { $_->{'id'} == $in{'id'} } &list_action_templates();
 	}
+else {
+	$tmpl = { };
+	$tmpl->{'stop'} = ':kill' if ($config{'mode'} eq 'smf');
+	}
 
 print &ui_form_start("save_tmpl.cgi", "post");
 print &ui_hidden("new", $in{'new'});

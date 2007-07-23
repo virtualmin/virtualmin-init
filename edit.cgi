@@ -10,7 +10,7 @@ $d = $in{'dom'} ? &virtual_server::get_domain($in{'dom'}) : undef;
 
 if (!$in{'new'}) {
 	# Get the existing action
-	($init) = grep { $_->{'name'} eq $in{'name'} } 
+	($init) = grep { $_->{'id'} eq $in{'id'} } 
 		       &list_domain_actions($d);
 	}
 else {
@@ -25,7 +25,7 @@ else {
 print &ui_form_start("save.cgi", "post");
 print &ui_hidden("new", $in{'new'});
 print &ui_hidden("tmpl", $in{'tmpl'});
-print &ui_hidden("old", $in{'name'});
+print &ui_hidden("id", $in{'id'});
 if ($in{'dom'}) {
 	print &ui_hidden("dom", $in{'dom'});
 	}
@@ -96,7 +96,8 @@ if ($tmpl) {
 	$stop = $tmpl->{'stop'};
 	$stop = &substitute_template($stop, $d) if ($d);
 	print &ui_table_row($text{'edit_stop'},
-			    "<pre>".&html_escape($stop)."</pre>");
+			    $stop eq ":kill" ? $text{'edit_stopkill'} :
+				    "<pre>".&html_escape($stop)."</pre>");
 	}
 else {
 	# Start code
@@ -114,6 +115,25 @@ else {
 		$stopdef.
 		&ui_textarea("stop", $init->{'stop'} eq ':kill' ? undef :
 					$init->{'stop'}, 5, 80));
+
+	# Current processes
+	@procs = &get_started_processes($init);
+	if (@procs) {
+		$ptable = &ui_columns_start([ $text{'edit_ppid'},
+					      $text{'edit_pcpu'},
+					      $text{'edit_psize'},
+					      $text{'edit_pcmd'} ]);
+		foreach my $p (@procs) {
+			$ptable .= &ui_columns_row([
+				$p->{'pid'},
+				$p->{'cpu'},
+				$p->{'size'},
+				$p->{'args'}
+				]);
+			}
+		$ptable .= &ui_columns_end();
+		print &ui_table_row($text{'edit_procs'}, $ptable);
+		}
 	}
 
 print &ui_table_end();

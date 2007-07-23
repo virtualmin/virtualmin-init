@@ -8,8 +8,8 @@ $d = &virtual_server::get_domain($in{'dom'});
 
 # Get the current boot action
 @inits = &list_domain_actions($d);
-if ($in{'old'}) {
-	($init) = grep { $_->{'name'} eq $in{'old'} } @inits;
+if ($in{'id'}) {
+	($init) = grep { $_->{'id'} eq $in{'id'} } @inits;
 	$oldinit = { %$init };
 	}
 elsif ($access{'max'}) {

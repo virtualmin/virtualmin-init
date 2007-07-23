@@ -43,6 +43,7 @@ index_tstart=Startup commands
 index_tstop=Shutdown commands
 index_tnone=No template actions have been defined yet.
 index_maint=Failed
+index_kill=Kill processes
 
 edit_title1=Create Bootup Action
 edit_title2=Edit Bootup Action
@@ -62,6 +63,11 @@ edit_stopnow=Stop Now
 edit_desc=Description
 edit_tmpl=Template for new action
 edit_manual=Custom action
+edit_procs=Started processes
+edit_ppid=PID
+edit_pcpu=CPU Used
+edit_psize=Memory Used
+edit_pcmd=Command line
 
 save_err=Failed to save action
 save_err2=Failed to delete action
