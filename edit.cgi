@@ -117,22 +117,24 @@ else {
 					$init->{'stop'}, 5, 80));
 
 	# Current processes
-	@procs = &get_started_processes($init);
-	if (@procs) {
-		$ptable = &ui_columns_start([ $text{'edit_ppid'},
-					      $text{'edit_pcpu'},
-					      $text{'edit_psize'},
-					      $text{'edit_pcmd'} ]);
-		foreach my $p (@procs) {
-			$ptable .= &ui_columns_row([
-				$p->{'pid'},
-				$p->{'cpu'},
-				$p->{'size'},
-				$p->{'args'}
-				]);
+	if (!$in{'new'}) {
+		@procs = &get_started_processes($init);
+		if (@procs) {
+			$ptable = &ui_columns_start([ $text{'edit_ppid'},
+						      $text{'edit_pcpu'},
+						      $text{'edit_psize'},
+						      $text{'edit_pcmd'} ]);
+			foreach my $p (@procs) {
+				$ptable .= &ui_columns_row([
+					$p->{'pid'},
+					$p->{'cpu'},
+					$p->{'size'},
+					$p->{'args'}
+					]);
+				}
+			$ptable .= &ui_columns_end();
+			print &ui_table_row($text{'edit_procs'}, $ptable);
 			}
-		$ptable .= &ui_columns_end();
-		print &ui_table_row($text{'edit_procs'}, $ptable);
 		}
 	}
 
