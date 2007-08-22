@@ -157,6 +157,7 @@ else {
 	else {
 		$init->{'fmri'} = "svc:/virtualmin/$usdom/$init->{'name'}";
 		}
+	&execute_command("svcadm refresh $init->{'fmri'}");
 	if (!$init->{'status'}) {
 		# Make sure disabled after creation
 		&execute_command(
@@ -224,6 +225,7 @@ else {
 		if ($out =~ /Refreshed\s+(svc:.*)\./) {
 			$init->{'fmri'} = $1;
 			}
+		&execute_command("svcadm refresh $init->{'fmri'}");
 		}
 
 	# Update start and stop commands
@@ -245,6 +247,8 @@ else {
 		$d->{'user'}, "astring");
 	&set_smf_prop($init->{'fmri'}, "stop/group",
 		$d->{'group'}, "astring");
+
+	&execute_command("svcadm refresh $init->{'fmri'}");
 
 	if ($init->{'status'} == 1 && $oldinit->{'status'} == 0) {
 		# Enable service
@@ -462,10 +466,13 @@ if ($fmri =~ /:default$/ || $name eq "tm_common_name/C") {
 	$fmri =~ s/:[^\/:]+$//;
 	}
 if ($type eq "ustring" || $type eq "astring") {
+	$value =~ s/\\/\\\\/g;
+	$value =~ s/"/\\"/g;
 	$value = "\"$value\"";
 	}
 local $qfmri = quotemeta($fmri);
-local $out = `svccfg -s $qfmri 'setprop $name = $type: $value' 2>&1`;
+local $qset = quotemeta("setprop $name = $type: $value");
+local $out = `svccfg -s $qfmri $qset 2>&1`;
 if ($? || $out =~ /failed/) {
 	&error("Failed to set SMF property $name to $value : $out");
 	}
