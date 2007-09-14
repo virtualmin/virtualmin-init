@@ -180,7 +180,7 @@ else {
 	# For SMF, if the domain or service name has changed, then the
 	# FMRI may have too ... so we need to export the XML, patch it,
 	# delete the service, then re-create.
-
+	local $stopped;
 	if ($d->{'dom'} ne $oldd->{'dom'} ||
 	    $d->{'user'} ne $oldd->{'user'} ||
 	    $init->{'name'} ne $oldinit->{'name'}) {
@@ -190,6 +190,13 @@ else {
 		local $xml = `svccfg export $fmri`;
 		if ($?) {
 			&error("SMF XML export failed : $xml");
+			}
+
+		# Shut down under the old name, if it was running
+		if ($init->{'status'} == 1) {
+			&capture_function_output(
+				\&stop_domain_action, $oldd, $init);
+			$stopped = 1;
 			}
 
 		# Replace service name, domain name and user
@@ -226,6 +233,12 @@ else {
 			$init->{'fmri'} = $1;
 			}
 		&execute_command("svcadm refresh $init->{'fmri'}");
+
+		# Start under the new name
+		if ($stopped) {
+			&capture_function_output(
+				\&start_domain_action, $d, $init);
+			}
 		}
 
 	# Update start and stop commands
@@ -298,6 +311,17 @@ else {
 	sleep(2);	# Wait for disable
 	local $out = `svccfg delete -f $init->{'fmri'} 2>&1`;
 	&error("<pre>".&html_escape($out)."</pre>") if ($? || $out =~ /failed/);
+
+	# If there are no more services with the same base fmri (ie. without the
+	# :whatever suffix), delete the base too
+	if ($init->{'fmri'} =~ /^(.*):([^:]+)$/ && $2 ne 'default') {
+		local $basefmri = $1;
+		local @others = &list_domain_actions($d);
+		@others = grep { $_->{'fmri'} =~ /^\Q$basefmi\E:/ } @others;
+		if (!@others) {
+			$out = `svccfg delete -f $basefmri 2>&1`;
+			}
+		}
 	}
 }
 
