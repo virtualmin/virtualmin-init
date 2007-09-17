@@ -203,7 +203,7 @@ else {
 		if ($d->{'dom'} ne $oldd->{'dom'}) {
 			local $usdom = $d->{'dom'};
 			$usdom =~ s/\./_/g;
-			local $oldusdom = $d->{'dom'};
+			local $oldusdom = $oldd->{'dom'};
 			$oldusdom =~ s/\./_/g;
 			$xml =~ s/\Q$oldusdom\E/$usdom/g;
 			}
