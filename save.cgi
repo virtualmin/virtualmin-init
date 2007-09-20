@@ -10,6 +10,7 @@ $d = &virtual_server::get_domain($in{'dom'});
 @inits = &list_domain_actions($d);
 if ($in{'id'}) {
 	($init) = grep { $_->{'id'} eq $in{'id'} } @inits;
+	$init || &error($text{'edit_egone'});
 	$oldinit = { %$init };
 	}
 elsif ($access{'max'}) {

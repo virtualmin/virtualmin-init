@@ -12,6 +12,7 @@ if (!$in{'new'}) {
 	# Get the existing action
 	($init) = grep { $_->{'id'} eq $in{'id'} } 
 		       &list_domain_actions($d);
+	$init || &error($text{'edit_egone'});
 	}
 else {
 	# Adding a new action

@@ -68,6 +68,7 @@ edit_ppid=PID
 edit_pcpu=CPU Used
 edit_psize=Memory Used
 edit_pcmd=Command line
+edit_egone=Action does not exist!
 
 save_err=Failed to save action
 save_err2=Failed to delete action

@@ -68,14 +68,13 @@ else {
 	while(<SVCS>) {
 		s/\r|\n//g;
 		local ($state, $when, $fmri) = split(/\s+/, $_);
-		local $usdom = $d->{'dom'};
-		$usdom =~ s/\./_/g;
+		local $usdom = &make_fmri_domain($d->{'dom'});
 		if ($fmri =~ /^svc:\/virtualmin\/\Q$usdom\E\/(.+):default$/ ||
 		    $fmri =~ /^svc:\/virtualmin\/[^\/]+\/\Q$usdom\E\/([^:]+):([^:]+)/) {
 			# Found one for the domain .. get the commands
 			# and user
 			local $init = { 'type' => 'smf',
-					'name' => $2 || $1,
+					'name' => $2 && $2 ne "default" ? $2 : $1,
 					'fmri' => $fmri,
 					'id' => $fmri,
 					'status' =>
@@ -128,8 +127,7 @@ else {
 		     &read_file_contents(
 			$config{'xml'} ||
 			"$module_root_directory/template.xml");
-	local $usdom = $d->{'dom'};
-	$usdom =~ s/\./_/g;
+	local $usdom = &make_fmri_domain($d->{'dom'});
 	local %hash = ( 'DOM' => $usdom,
 			'DESC' => $init->{'desc'},
 			'NAME' => $init->{'name'},
@@ -201,10 +199,8 @@ else {
 
 		# Replace service name, domain name and user
 		if ($d->{'dom'} ne $oldd->{'dom'}) {
-			local $usdom = $d->{'dom'};
-			$usdom =~ s/\./_/g;
-			local $oldusdom = $oldd->{'dom'};
-			$oldusdom =~ s/\./_/g;
+			local $usdom = &make_fmri_domain($d->{'dom'});
+			local $oldusdom = &make_fmri_domain($oldd->{'dom'});
 			$xml =~ s/\Q$oldusdom\E/$usdom/g;
 			}
 		if ($d->{'user'} ne $oldd->{'user'}) {
@@ -561,6 +557,25 @@ sub delete_action_template
 {
 local ($tmpl) = @_;
 unlink("$action_templates_dir/$tmpl->{'id'}");
+}
+
+# make_fmri_domain(name)
+# Removes _ and leading numbers from a domain name
+sub make_fmri_domain
+{
+local ($usdom) = @_;
+$usdom =~ s/\./_/g;
+$usdom =~ s/^0/zero/g;
+$usdom =~ s/^1/one/g;
+$usdom =~ s/^2/two/g;
+$usdom =~ s/^3/three/g;
+$usdom =~ s/^4/four/g;
+$usdom =~ s/^5/five/g;
+$usdom =~ s/^6/six/g;
+$usdom =~ s/^7/seven/g;
+$usdom =~ s/^8/eight/g;
+$usdom =~ s/^9/nine/g;
+return $usdom;
 }
 
 1;
