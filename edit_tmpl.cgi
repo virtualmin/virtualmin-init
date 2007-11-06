@@ -56,6 +56,7 @@ print &ui_table_start($text{'tmpl_header2'}, undef, 2);
 
 $ptable = &ui_columns_start([ $text{'tmpl_pname'},
 			      $text{'tmpl_ptype'},
+			      $text{'tmpl_popts'},
 			      $text{'tmpl_pdesc'} ], 100);
 for($pmax=0; defined($tmpl->{'pname_'.$pmax}); $pmax++) { }
 for($i=0; $i < $pmax+3; $i++) {
@@ -65,7 +66,13 @@ for($i=0; $i < $pmax+3; $i++) {
 			   [ [ 0, $text{'tmpl_ptype0'} ],
 			     [ 1, $text{'tmpl_ptype1'} ],
 			     [ 2, $text{'tmpl_ptype2'} ],
-			   ]),
+			     [ 3, $text{'tmpl_ptype3'} ],
+			     [ 4, $text{'tmpl_ptype4'} ],
+			   ], 1, 0, 0, 0,
+			   "onChange='form.popts_$i.disabled = value != 3 && value != 4'"),
+		&ui_textbox("popts_$i", $tmpl->{'popts_'.$i}, 20,
+			    $tmpl->{'ptype_'.$i} != 3 &&
+			    $tmpl->{'ptype_'.$i} != 4),
 		&ui_textbox("pdesc_$i", $tmpl->{'pdesc_'.$i}, 50),
 		]);
 	}

@@ -578,5 +578,37 @@ $usdom =~ s/^9/nine/g;
 return $usdom;
 }
 
+# read_opts_file(file)
+# Returns an array of option names and values
+sub read_opts_file
+{
+local @rv;
+local $file = $_[0];
+if ($file !~ /^\// && $file !~ /\|\s*$/) {
+	local @uinfo = getpwnam($remote_user);
+	if (@uinfo) {
+		$file = "$uinfo[7]/$file";
+		}
+	}
+open(FILE, $file);
+while(<FILE>) {
+	s/\r|\n//g;
+	if (/^"([^"]*)"\s+"([^"]*)"$/) {
+		push(@rv, [ $1, $2 ]);
+		}
+	elsif (/^"([^"]*)"$/) {
+		push(@rv, [ $1, $1 ]);
+		}
+	elsif (/^(\S+)\s+(\S.*)/) {
+		push(@rv, [ $1, $2 ]);
+		}
+	else {
+		push(@rv, [ $_, $_ ]);
+		}
+	}
+close(FILE);
+return @rv;
+}
+
 1;
 

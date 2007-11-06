@@ -83,6 +83,9 @@ else {
 					&error(&text('save_eptype1', $td));
 				$thash{$tn} = $tv;
 				}
+			elsif ($tt == 3 || $tt == 4) {
+				$thash{$tn} = $tv;
+				}
 			}
 		$init->{'start'} = &substitute_template(
 					$tmpl->{'start'}, \%thash);

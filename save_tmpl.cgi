@@ -54,6 +54,14 @@ else {
 		$in{'pdesc_'.$i} =~ /\S/ ||
 			&error(&text('tmpl_epdesc', $i+1));
 		$tmpl->{'pdesc_'.$i} = $in{'pdesc_'.$i};
+		if ($tmpl->{'ptype_'.$i} == 3 || $tmpl->{'ptype_'.$i} == 4) {
+			-r $in{'popts_'.$i} ||
+				&error(&text('tmpl_epopts', $i+1));
+			$tmpl->{'popts_'.$i} = $in{'popts_'.$i};
+			}
+		else {
+			delete($tmpl->{'popts_'.$i});
+			}
 		}
 
 	# Create or save

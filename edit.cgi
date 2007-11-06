@@ -80,11 +80,15 @@ if ($tmpl) {
 	for($i=0; defined($tmpl->{'pname_'.$i}); $i++) {
 		$tt = $tmpl->{'ptype_'.$i};
 		$tn = 'param_'.$tmpl->{'pname_'.$i};
+		$of = $tmpl->{'popts_'.$i};
+		@opts = $of ? &read_opts_file($of) : ( );
 		print &ui_table_row($tmpl->{'pdesc_'.$i},
 			$tt == 0 ? &ui_textbox($tn, undef, 50) :
 			$tt == 1 ? &ui_textbox($tn, undef, 10) :
 			$tt == 2 ? &ui_textbox($tn, undef, 50).
 				    &file_chooser_button($tn) :
+			$tt == 3 ? &ui_radio($tn, $opts[0]->[0], \@opts) :
+			$tt == 4 ? &ui_select($tn, $opts[0]->[0], \@opts) :
 				   undef);
 		}
 
