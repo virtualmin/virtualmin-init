@@ -63,11 +63,11 @@ else {
 	$in{'desc'} =~ /\S/ || &error($text{'save_edesc'});
 	$init->{'desc'} = $in{'desc'};
 	$init->{'status'} = $in{'status'};
+	%tparams = ( );
 	if ($in{'new'} && $in{'tmpl'}) {
 		# From template
 		($tmpl) = grep { $_->{'id'} == $in{'tmpl'} }
 				&list_action_templates();
-		%thash = %$d;
 		for($i=0; defined($tmpl->{'pname_'.$i}); $i++) {
 			$td = $tmpl->{'pdesc_'.$i};
 			$tt = $tmpl->{'ptype_'.$i};
@@ -76,17 +76,18 @@ else {
 			if ($tt == 0 || $tt == 2) {
 				$tv =~ /\S/ ||
 					&error(&text('save_eptype0', $td));
-				$thash{$tn} = $tv;
+				$tparams{$tn} = $tv;
 				}
 			elsif ($tt == 1) {
 				$tv =~ /^\d+$/ ||
 					&error(&text('save_eptype1', $td));
-				$thash{$tn} = $tv;
+				$tparams{$tn} = $tv;
 				}
 			elsif ($tt == 3 || $tt == 4) {
-				$thash{$tn} = $tv;
+				$tparams{$tn} = $tv;
 				}
 			}
+		%thash = ( %$d, %tparams );
 		$init->{'start'} = &substitute_template(
 					$tmpl->{'start'}, \%thash);
 		$init->{'stop'} = &substitute_template(
@@ -113,7 +114,7 @@ else {
 
 	# Create or save
 	if ($in{'new'}) {
-		&create_domain_action($d, $init, $tmpl);
+		&create_domain_action($d, $init, $tmpl, \%tparams);
 		}
 	else {
 		&modify_domain_action($d, $d, $init, $oldinit);

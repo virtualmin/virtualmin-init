@@ -99,11 +99,11 @@ else {
 return @rv;
 }
 
-# create_domain_action(&domain, &action, [&template])
+# create_domain_action(&domain, &action, [&template, &template-params])
 # Creates the init script or SMF service for some new action
 sub create_domain_action
 {
-local ($d, $init, $tmpl) = @_;
+local ($d, $init, $tmpl, $tparams) = @_;
 if ($config{'mode'} eq 'init') {
 	# Add init script
 	&foreign_require("init", "init-lib.pl");
@@ -136,6 +136,7 @@ else {
 			'USER' => $d->{'user'},
 			'GROUP' => $d->{'group'},
 			'HOME' => $d->{'home'} );
+	%hash = ( %hash, %$tparams );
 	$hash{'START'} =~ s/\n*$//g;
 	$hash{'STOP'} =~ s/\n*$//g;
 	$xml = &substitute_template($xml, \%hash);
