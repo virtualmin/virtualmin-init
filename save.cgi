@@ -88,6 +88,7 @@ else {
 				}
 			}
 		%thash = ( %$d, %tparams );
+		$thash{'NAME'} = $init->{'name'};
 		$init->{'start'} = &substitute_template(
 					$tmpl->{'start'}, \%thash);
 		$init->{'stop'} = &substitute_template(
