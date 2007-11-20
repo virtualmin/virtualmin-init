@@ -489,6 +489,7 @@ if ($fmri =~ /:default$/ || $name eq "tm_common_name/C") {
 if ($type eq "ustring" || $type eq "astring") {
 	$value =~ s/\\/\\\\/g;
 	$value =~ s/"/\\"/g;
+	$value =~ s/'/\\'/g;
 	$value = "\"$value\"";
 	}
 local $qfmri = quotemeta($fmri);

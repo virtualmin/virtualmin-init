@@ -143,6 +143,12 @@ else {
 		}
 	}
 
+# SMF FMRI
+if (!$in{'new'} && $init->{'fmri'}) {
+	print &ui_table_row($text{'edit_fmri'},
+			    "<tt>".&html_escape($init->{'fmri'})."</tt>");
+	}
+
 print &ui_table_end();
 if ($in{'new'}) {
 	print &ui_form_end([ [ "create", $text{'create'} ] ]);

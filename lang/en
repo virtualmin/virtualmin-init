@@ -50,6 +50,7 @@ edit_title2=Edit Bootup Action
 edit_header=Bootup script details
 edit_dom=Virtual server
 edit_name=Action name
+edit_fmri=SMF FMRI
 edit_status=Start at reboot?
 edit_status2=Started?
 edit_maint=Failed to start
