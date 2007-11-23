@@ -311,7 +311,7 @@ else {
 
 	# If there are no more services with the same base fmri (ie. without the
 	# :whatever suffix), delete the base too
-	if ($init->{'fmri'} =~ /^(.*):([^:]+)$/ && $2 ne 'default') {
+	if ($init->{'fmri'} =~ /^(.*):([^:]+)$/) {
 		local $basefmri = $1;
 		local @others = &list_domain_actions($d);
 		@others = grep { $_->{'fmri'} =~ /^\Q$basefmi\E:/ } @others;
