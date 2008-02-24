@@ -46,11 +46,11 @@ if ($access{'max'}) {
 	}
 
 if (!$no_create) {
-	@links = ( "<a href='edit.cgi?new=1&dom=$in{'dom'}'>".
+	@links = ( "<a href='edit.cgi?new=1&dom=".&urlize($in{'dom'})."'>".
 		   "$text{'index_add'}</a>" );
 	foreach $tmpl (@templates) {
-		push(@links, "<a href='edit.cgi?new=1&dom=$in{'dom'}&".
-			     "tmpl=$tmpl->{'id'}'>".
+		push(@links, "<a href='edit.cgi?new=1&dom=".&urlize($in{'dom'}).
+			     "&tmpl=$tmpl->{'id'}'>".
 			     &text('index_add2', $tmpl->{'desc'})."</a>");
 		}
 	}
