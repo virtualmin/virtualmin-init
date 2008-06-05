@@ -2,3 +2,4 @@ desc=Virtualmin Bootup Actions
 depends=init
 category=system
 version=1.9
+desc_nl=Virtualmin Bootup Acties
