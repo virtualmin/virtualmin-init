@@ -45,86 +45,84 @@ if ($access{'max'}) {
 		}
 	}
 
+# Build contents for table of actions
+@links = ( );
 if (!$no_create) {
-	@links = ( "<a href='edit.cgi?new=1&dom=".&urlize($in{'dom'})."'>".
-		   "$text{'index_add'}</a>" );
+	push(@links, [ "edit.cgi?new=1&dom=".&urlize($in{'dom'}),
+		       $text{'index_add'} ]);
 	foreach $tmpl (@templates) {
-		push(@links, "<a href='edit.cgi?new=1&dom=".&urlize($in{'dom'}).
-			     "&tmpl=$tmpl->{'id'}'>".
-			     &text('index_add2', $tmpl->{'desc'})."</a>");
+		push(@links, [ "edit.cgi?new=1&dom=".&urlize($in{'dom'}).
+			       "&tmpl=$tmpl->{'id'}",
+			       &text('index_add2', $tmpl->{'desc'}) ]);
 		}
 	}
-if (@allinits) {
-	unshift(@links, &select_all_link("d"), &select_invert_link("d"));
-	@tds = ( "width=5", $many ? ( undef ) : ( ), undef, undef, "width=10%");
-	print &ui_form_start("mass.cgi", "post");
-	print &ui_links_row(\@links);
-	print &ui_columns_start([ "",
-				  $text{'index_name'},
-				  $many ? ( $text{'index_dom'} ) : ( ),
-				  $text{'index_desc'},
-				  &can_start_actions() ? $text{'index_status'}
-						       : $text{'index_status2'}
-				 ], 100, 0, \@tds);
-	$green = "<font color=#00aa00>$text{'yes'}</font>";
-	$red = "<font color=#ff0000>$text{'no'}</font>";
-	$orange = "<font color=#ffaa00>$text{'index_maint'}</font>";
-	foreach my $i (sort { $a->{'name'} cmp $b->{'name'} } @allinits) {
-		print &ui_checked_columns_row([
-			"<a href='edit.cgi?id=".&urlize($i->{'id'}).
-			 "&dom=$i->{'dom'}'>$i->{'name'}</a>",
-			$many ? ( $i->{'domname'} ) : ( ),
-			$i->{'desc'},
-			$i->{'status'} == 1 ? $green :
-			$i->{'status'} == 2 ? $orange :
-					      $red
-			],
-			\@tds, "d", $i->{'dom'}."/".$i->{'name'});
-		}
-	print &ui_columns_end();
-	print &ui_links_row(\@links);
-	print &ui_form_end([ [ "delete", $text{'index_delete'} ],
-			     undef,
-			     [ "startnow", $text{'index_startnow'} ],
-			     [ "stopnow", $text{'index_stopnow'} ],
-			     [ "restartnow", $text{'index_restartnow'} ]
-			   ]);
+$green = "<font color=#00aa00>$text{'yes'}</font>";
+$red = "<font color=#ff0000>$text{'no'}</font>";
+$orange = "<font color=#ffaa00>$text{'index_maint'}</font>";
+@table = ( );
+foreach my $i (sort { $a->{'name'} cmp $b->{'name'} } @allinits) {
+	push(@table, [
+		{ 'type' => 'checkbox', 'name' => 'd',
+		  'value' => $i->{'dom'}."/".$i->{'name'} },
+		"<a href='edit.cgi?id=".&urlize($i->{'id'}).
+		 "&dom=$i->{'dom'}'>$i->{'name'}</a>",
+		$many ? ( $i->{'domname'} ) : ( ),
+		$i->{'desc'},
+		$i->{'status'} == 1 ? $green :
+		$i->{'status'} == 2 ? $orange :
+				      $red
+		]);
 	}
-else {
-	if ($in{'dom'}) {
-		print "<b>$text{'index_none'}</b><p>\n";
-		}
-	else {
-		print "<b>$text{'index_none2'}</b><p>\n";
-		}
-	print &ui_links_row(\@links);
-	}
+
+# Render the table of actions
+print &ui_form_columns_table(
+	"mass.cgi",
+	[ [ "delete", $text{'index_delete'} ],
+	  undef,
+	  [ "startnow", $text{'index_startnow'} ],
+	  [ "stopnow", $text{'index_stopnow'} ],
+	  [ "restartnow", $text{'index_restartnow'} ] ],
+	1,
+	\@links,
+	undef,
+	[ "", $text{'index_name'},
+	  $many ? ( $text{'index_dom'} ) : ( ),
+	  $text{'index_desc'},
+	  &can_start_actions() ? $text{'index_status'} : $text{'index_status2'}
+	],
+	100,
+	\@table,
+	undef,
+	0,
+	undef,
+	$in{'dom'} ? $text{'index_none'} : $text{'index_none2'}
+	);
+	
 
 # Show list of templates
 if ($access{'templates'}) {
-	print "<hr>\n";
+	print &ui_hr();
 	print $text{'index_tdesc2'},"<p>\n";
-	@links = ( "<a href='edit_tmpl.cgi?new=1'>$text{'index_tadd'}</a>" );
-	if (@templates) {
-		print &ui_links_row(\@links);
-		print &ui_columns_start([ $text{'index_tdesc'},
-					  $text{'index_tstart'},
-					  $text{'index_tstop'} ]);
-		foreach $t (@templates) {
-			print &ui_columns_row([
-				"<a href='edit_tmpl.cgi?id=$t->{'id'}'>".
-				"$t->{'desc'}</a>",
-				&shorten_command($t->{'start'}),
-				&shorten_command($t->{'stop'}),
-				]);
-			}
-		print &ui_columns_end();
-		print &ui_links_row(\@links);
+	@table = ( );
+	foreach $t (@templates) {
+		push(@table, [
+			"<a href='edit_tmpl.cgi?id=$t->{'id'}'>".
+			"$t->{'desc'}</a>",
+			&shorten_command($t->{'start'}),
+			&shorten_command($t->{'stop'}),
+			]);
 		}
-	else {
-		print "<b>$text{'index_tnone'}</b><p>\n";
-		print &ui_links_row(\@links);
-		}
+	print &ui_form_columns_table(
+		undef,
+		undef,
+		0,
+		[ [ "edit_tmpl.cgi?new=1", $text{'index_tadd'} ] ],
+		undef,
+		[ $text{'index_tdesc'}, $text{'index_tstart'},
+		  $text{'index_tstop'} ],
+		100,
+		\@table,
+		undef, 0, undef, $text{'index_tnone'});
 	}
 
 &ui_print_footer("/", $text{'index'});

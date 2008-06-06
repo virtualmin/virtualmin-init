@@ -54,13 +54,10 @@ print &ui_table_end();
 # Section for additional parameters
 print &ui_table_start($text{'tmpl_header2'}, undef, 2);
 
-$ptable = &ui_columns_start([ $text{'tmpl_pname'},
-			      $text{'tmpl_ptype'},
-			      $text{'tmpl_popts'},
-			      $text{'tmpl_pdesc'} ], 100);
+@table = ( );
 for($pmax=0; defined($tmpl->{'pname_'.$pmax}); $pmax++) { }
 for($i=0; $i < $pmax+3; $i++) {
-	$ptable .= &ui_columns_row([
+	push(@table, [
 		&ui_textbox("pname_$i", $tmpl->{'pname_'.$i}, 10),
 		&ui_select("ptype_$i", $tmpl->{'ptype_'.$i},
 			   [ [ 0, $text{'tmpl_ptype0'} ],
@@ -76,7 +73,13 @@ for($i=0; $i < $pmax+3; $i++) {
 		&ui_textbox("pdesc_$i", $tmpl->{'pdesc_'.$i}, 50),
 		]);
 	}
-$ptable .= &ui_columns_end();
+$ptable = &ui_columns_table(
+	[ $text{'tmpl_pname'}, $text{'tmpl_ptype'},
+	  $text{'tmpl_popts'}, $text{'tmpl_pdesc'} ],
+	100,
+	\@table,
+	undef,
+	1);
 print &ui_table_row(undef, $ptable, 2);
 
 print &ui_table_end();

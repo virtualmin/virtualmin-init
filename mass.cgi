@@ -43,7 +43,7 @@ elsif ($in{'stopnow'}) {
 	&ui_print_unbuffered_header(undef, $text{'stop_titles'}, "");
 
 	foreach $di (@dominits) {
-		print &text('stop_stoping',
+		print &text('stop_stopping',
 			    "<tt>$di->[1]->{'name'}</tt>"),"\n";
 		print "<pre>";
 		$ex = &stop_domain_action($di->[0], $di->[1]);
