@@ -1,10 +1,12 @@
 # Functions for domain-level init scripts
-# XXX make sure ${USER} is updated on renaming?
-# XXX preserve template on modify FMRI
 
-do '../web-lib.pl';
+BEGIN { push(@INC, ".."); };
+eval "use WebminCore;";
+if ($@) {
+	do '../web-lib.pl';
+	do '../ui-lib.pl';
+	}
 &init_config();
-do '../ui-lib.pl';
 &foreign_require("virtual-server", "virtual-server-lib.pl");
 %access = &get_module_acl();
 $action_templates_dir = "$module_config_directory/templates";
