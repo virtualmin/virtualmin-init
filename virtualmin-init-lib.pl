@@ -142,8 +142,7 @@ else {
 	$hash{'START'} =~ s/\n*$//g;
 	$hash{'STOP'} =~ s/\n*$//g;
 	$xml = &substitute_template($xml, \%hash);
-	#local $temp = &transname();
-	local $temp = &tempname();
+	local $temp = &transname();
 	&open_tempfile(TEMP, ">$temp", 0, 1);
 	&print_tempfile(TEMP, $xml);
 	&close_tempfile(TEMP);
