@@ -120,3 +120,4 @@ tmpl_popts=Radio/menu options file
 tmpl_epname=Invalid name for parameter $1 - only letters, numbers and _ are allowed
 tmpl_epdesc=Missing description for parameter $1
 tmpl_epopts=Missing or non-existant options file for parameter $1
+__norefs=1
