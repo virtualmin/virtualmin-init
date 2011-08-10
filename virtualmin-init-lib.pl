@@ -14,7 +14,9 @@ sub virtualmin_init_check
 if ($config{'mode'} eq 'init') {
 	&foreign_check("init") || return $text{'check_einit'};
 	&foreign_require("init", "init-lib.pl");
-	$init::init_mode eq "init" || return $text{'check_einit2'};
+	$init::init_mode eq "init" ||
+	    $init::init_mode eq "upstart" ||
+		return $text{'check_einit2'};
 	}
 else {
 	foreach my $c ("svcs", "svccfg", "svcadm") {
@@ -107,6 +109,7 @@ if ($config{'mode'} eq 'init') {
 	&foreign_require("init", "init-lib.pl");
 	local $start = &make_action_command('start', $init, $d->{'home'});
 	local $stop = &make_action_command('stop', $init, $d->{'home'});
+	local $init::init_mode = "init";
 	&init::enable_at_boot($d->{'dom'}."_".$init->{'name'},
 			      $init->{'desc'}, $start, $stop);
 	local $if = &init::action_filename($d->{'dom'}."_".$init->{'name'});
