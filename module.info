@@ -1,6 +1,6 @@
 desc=Virtualmin Bootup Actions
 depends=init 1.420
 category=system
-version=2.1
+version=2.2
 desc_nl=Virtualmin Bootup Acties
 feedback=jcameron@webmin.com
