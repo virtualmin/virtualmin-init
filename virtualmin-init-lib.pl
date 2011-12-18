@@ -16,7 +16,8 @@ if ($config{'mode'} eq 'init') {
 	&foreign_require("init", "init-lib.pl");
 	$init::init_mode eq "init" ||
 	    $init::init_mode eq "upstart" ||
-		return $text{'check_einit2'};
+	        $init::init_mode eq "systemd" ||
+		    return $text{'check_einit2'};
 	}
 else {
 	foreach my $c ("svcs", "svccfg", "svcadm") {
