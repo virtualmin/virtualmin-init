@@ -1,5 +1,6 @@
 feat_name=Bootup actions
 feat_label=Can create bootup actions?
+feat_label2=Bootup actions
 feat_eunix=Bootup actions can only be enabled for domains with a Unix user
 feat_bname=Bootup actions for the virtual server
 feat_rename=Updating bootup actions ..
