@@ -1,0 +1,2 @@
+mode=Oppstartssystem som skal konfigureres,1,init-Standard init.d script,smf-Solaris SMF
+xml=Mal XML fil for nye SMF handlinger,3,Innebygd standard

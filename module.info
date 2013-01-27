@@ -4,3 +4,4 @@ category=system
 version=2.3
 desc_nl=Virtualmin Bootup Acties
 feedback=jcameron@webmin.com
+desc_no=Virtualmin oppstartshandlinger
