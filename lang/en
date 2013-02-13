@@ -9,6 +9,7 @@ feat_delete=Deleting bootup actions for virtual server ..
 feat_losing=All bootup actions will be deleted
 feat_backup=Backing up bootup actions ..
 feat_restore=Re-creating bootup actions ..
+feat_module=Virtualmin Bootup Actions (for creating actions)
 
 links_link=Bootup Actions
 
