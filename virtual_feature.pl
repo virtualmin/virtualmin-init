@@ -195,9 +195,9 @@ sub feature_backup
 local ($d, $file) = @_;
 &$virtual_server::first_print($text{'feat_backup'});
 local $actions = [ &list_domain_actions($d) ];
-&open_tempfile(INIT, ">$file") || return 0;
+&virtual_server::open_tempfile_as_domain_user($d, INIT, ">$file") || return 0;
 &print_tempfile(INIT, &serialise_variable($actions));
-&close_tempfile(INIT);
+&virtual_server::close_tempfile_as_domain_user($d, INIT);
 if (@$actions) {
 	&$virtual_server::second_print($virtual_server::text{'setup_done'});
 	}
