@@ -1,5 +1,8 @@
 #!/usr/local/bin/perl
 # Show a page for creating or editing an action template
+use strict;
+use warnings;
+our (%access, %text, %in, %config);
 
 require './virtualmin-init-lib.pl';
 &ReadParse();
@@ -7,6 +10,7 @@ $access{'templates'} || &error($text{'tmpl_ecannot'});
 &ui_print_header(undef,
 		 $in{'new'} ? $text{'tmpl_title1'} : $text{'tmpl_title2'}, "");
 
+my $tmpl;
 if (!$in{'new'}) {
 	# Get the existing template
 	($tmpl) = grep { $_->{'id'} == $in{'id'} } &list_action_templates();
@@ -30,6 +34,7 @@ print &ui_table_row($text{'edit_start'},
 	&ui_textarea("start", $tmpl->{'start'}, 5, 80));
 
 # Stop code
+my $stopdef;
 if ($config{'mode'} eq 'smf') {
 	$stopdef = &ui_radio("stop_def", $tmpl->{'stop'} eq ':kill' ? 1 : 0,
 			     [ [ 1, $text{'edit_stopkill'} ],
@@ -54,9 +59,10 @@ print &ui_table_end();
 # Section for additional parameters
 print &ui_table_start($text{'tmpl_header2'}, undef, 2);
 
-@table = ( );
+my @table = ( );
+my $pmax;
 for($pmax=0; defined($tmpl->{'pname_'.$pmax}); $pmax++) { }
-for($i=0; $i < $pmax+3; $i++) {
+for(my $i=0; $i < $pmax+3; $i++) {
 	push(@table, [
 		&ui_textbox("pname_$i", $tmpl->{'pname_'.$i}, 10),
 		&ui_select("ptype_$i", $tmpl->{'ptype_'.$i},
@@ -73,7 +79,7 @@ for($i=0; $i < $pmax+3; $i++) {
 		&ui_textbox("pdesc_$i", $tmpl->{'pdesc_'.$i}, 50),
 		]);
 	}
-$ptable = &ui_columns_table(
+my $ptable = &ui_columns_table(
 	[ $text{'tmpl_pname'}, $text{'tmpl_ptype'},
 	  $text{'tmpl_popts'}, $text{'tmpl_pdesc'} ],
 	100,
@@ -92,5 +98,3 @@ else {
 	}
 
 &ui_print_footer("", $text{'index_return'});
-
-

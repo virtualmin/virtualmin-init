@@ -1,10 +1,14 @@
 #!/usr/local/bin/perl
 # Create, update or delete some action template
+use strict;
+use warnings;
+our (%access, %text, %in, %config);
 
 require './virtualmin-init-lib.pl';
 &ReadParse();
 $access{'templates'} || &error($text{'tmpl_ecannot'});
 
+my $tmpl;
 if (!$in{'new'}) {
 	# Get the existing template
 	($tmpl) = grep { $_->{'id'} == $in{'id'} } &list_action_templates();
@@ -40,12 +44,12 @@ else {
 		}
 
 	# Validate user-definable parameters
-	for($i=0; defined($tmpl->{'pname_'.$i}); $i++) {
+	for(my $i=0; defined($tmpl->{'pname_'.$i}); $i++) {
 		delete($tmpl->{'pname_'.$i});
 		delete($tmpl->{'ptype_'.$i});
 		delete($tmpl->{'pdesc_'.$i});
 		}
-	for($i=0; defined($in{'pname_'.$i}); $i++) {
+	for(my $i=0; defined($in{'pname_'.$i}); $i++) {
 		next if (!$in{'pname_'.$i});
 		$in{'pname_'.$i} =~ /^[a-z0-9_]+$/i ||
 			&error(&text('tmpl_epname', $i+1));
@@ -68,4 +72,3 @@ else {
 	&save_action_template($tmpl);
 	&redirect("");
 	}
-

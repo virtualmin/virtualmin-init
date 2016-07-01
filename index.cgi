@@ -1,14 +1,21 @@
 #!/usr/local/bin/perl
 # Show a list of bootup scripts that the user already has configured
+use strict;
+use warnings;
+our (%access, %text, %in);
+our $module_name;
 
 require './virtualmin-init-lib.pl';
 &ReadParse();
-$d = $in{'dom'} ? &virtual_server::get_domain($in{'dom'}) : undef;
+my $d = $in{'dom'} ? &virtual_server::get_domain($in{'dom'}) : undef;
 &ui_print_header($d ? &virtual_server::domain_in($d) : undef,
 		 $text{'index_title'}, "", undef, 0, 1);
-@templates = &list_action_templates();
+my @templates = &list_action_templates();
 
 # Work out domains to work on
+my @doms;
+my $many;
+
 if ($d) {
 	# Just one
 	@doms = ( $d );
@@ -22,6 +29,7 @@ else {
 	}
 
 # Show existing init scripts for all domains
+my @allinits;
 foreach my $d (@doms) {
 	foreach my $i (&list_domain_actions($d)) {
 		$i->{'dom'} = $d->{'id'};
@@ -31,8 +39,9 @@ foreach my $d (@doms) {
 	}
 
 # Work out limit
+my $no_create;
 if ($access{'max'}) {
-	$c = &count_user_actions();
+	my $c = &count_user_actions();
 	if ($c >= $access{'max'}) {
 		print "<b>",&text('index_hitmax', $access{'max'}),"</b><p>\n";
 		$no_create = 1;
@@ -46,20 +55,20 @@ if ($access{'max'}) {
 	}
 
 # Build contents for table of actions
-@links = ( );
+my @links;
 if (!$no_create) {
 	push(@links, [ "edit.cgi?new=1&dom=".&urlize($in{'dom'}),
 		       $text{'index_add'} ]);
-	foreach $tmpl (@templates) {
+	foreach my $tmpl (@templates) {
 		push(@links, [ "edit.cgi?new=1&dom=".&urlize($in{'dom'}).
 			       "&tmpl=$tmpl->{'id'}",
 			       &text('index_add2', $tmpl->{'desc'}) ]);
 		}
 	}
-$green = "<font color=#00aa00>$text{'yes'}</font>";
-$red = "<font color=#ff0000>$text{'no'}</font>";
-$orange = "<font color=#ffaa00>$text{'index_maint'}</font>";
-@table = ( );
+my $green = "<font color=#00aa00>$text{'yes'}</font>";
+my $red = "<font color=#ff0000>$text{'no'}</font>";
+my $orange = "<font color=#ffaa00>$text{'index_maint'}</font>";
+my @table;
 foreach my $i (sort { $a->{'name'} cmp $b->{'name'} } @allinits) {
 	push(@table, [
 		{ 'type' => 'checkbox', 'name' => 'd',
@@ -97,14 +106,14 @@ print &ui_form_columns_table(
 	undef,
 	$in{'dom'} ? $text{'index_none'} : $text{'index_none2'}
 	);
-	
+
 
 # Show list of templates
 if ($access{'templates'}) {
 	print &ui_hr();
 	print $text{'index_tdesc2'},"<p>\n";
 	@table = ( );
-	foreach $t (@templates) {
+	foreach my $t (@templates) {
 		push(@table, [
 			"<a href='edit_tmpl.cgi?id=$t->{'id'}'>".
 			"$t->{'desc'}</a>",
@@ -129,7 +138,7 @@ if ($access{'templates'}) {
 
 sub shorten_command
 {
-local ($cmd) = @_;
+my ($cmd) = @_;
 if ($cmd eq ":kill") {
 	return $text{'index_kill'};
 	}

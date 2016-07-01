@@ -1,3 +1,7 @@
+use strict;
+use warnings;
+our (%access);
+our $module_name;
 
 do 'virtualmin-init-lib.pl';
 

@@ -1,13 +1,19 @@
 #!/usr/local/bin/perl
 # Create, update, delete, start or stop some action
+use strict;
+use warnings;
+our (%access, %text, %in);
 
 require './virtualmin-init-lib.pl';
 &ReadParse();
-$d = &virtual_server::get_domain($in{'dom'});
+my $d = &virtual_server::get_domain($in{'dom'});
 &virtual_server::can_edit_domain($d) || &error($text{'save_ecannot'});
 
 # Get the current boot action
-@inits = &list_domain_actions($d);
+my @inits = &list_domain_actions($d);
+my $init;
+my $oldinit;
+my $ex; # XXX This is never used, but is captured as a result.
 if ($in{'id'}) {
 	($init) = grep { $_->{'id'} eq $in{'id'} } @inits;
 	$init || &error($text{'edit_egone'});
@@ -15,7 +21,7 @@ if ($in{'id'}) {
 	}
 elsif ($access{'max'}) {
 	# Check if limit was hit
-	$c = &count_user_actions();
+	my $c = &count_user_actions();
 	if ($c >= $access{'max'}) {
 		&error(&text('save_etoomany', $access{'max'}));
 		}
@@ -56,23 +62,24 @@ else {
 	$in{'name'} =~ /^[a-z0-9\.\-\_]+$/i || &error($text{'save_ename'});
 	if ($in{'new'} || $in{'name'} ne $init->{'name'}) {
 		# Check for clash
-		($clash) = grep { $_->{'name'} eq $in{'name'} } @inits;
+		my ($clash) = grep { $_->{'name'} eq $in{'name'} } @inits;
 		$clash && &error($text{'save_eclash'});
 		}
 	$init->{'name'} = $in{'name'};
 	$in{'desc'} =~ /\S/ || &error($text{'save_edesc'});
 	$init->{'desc'} = $in{'desc'};
 	$init->{'status'} = $in{'status'};
-	%tparams = ( );
+	my %tparams;
+	my $tmpl;
 	if ($in{'new'} && $in{'tmpl'}) {
 		# From template
 		($tmpl) = grep { $_->{'id'} == $in{'tmpl'} }
 				&list_action_templates();
-		for($i=0; defined($tmpl->{'pname_'.$i}); $i++) {
-			$td = $tmpl->{'pdesc_'.$i};
-			$tt = $tmpl->{'ptype_'.$i};
-			$tn = $tmpl->{'pname_'.$i};
-			$tv = $in{'param_'.$tn};
+		for(my $i=0; defined($tmpl->{'pname_'.$i}); $i++) {
+			my $td = $tmpl->{'pdesc_'.$i};
+			my $tt = $tmpl->{'ptype_'.$i};
+			my $tn = $tmpl->{'pname_'.$i};
+			my $tv = $in{'param_'.$tn};
 			if ($tt == 0 || $tt == 2) {
 				$tv =~ /\S/ ||
 					&error(&text('save_eptype0', $td));
@@ -87,7 +94,7 @@ else {
 				$tparams{$tn} = $tv;
 				}
 			}
-		%thash = ( %$d, %tparams );
+		my %thash = ( %$d, %tparams );
 		$thash{'name'} = $init->{'name'};
 		$init->{'start'} = &substitute_template(
 					$tmpl->{'start'}, \%thash);
@@ -122,4 +129,3 @@ else {
 		}
 	&redirect("index.cgi?dom=$in{'dom'}");
 	}
-
