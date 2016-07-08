@@ -21,7 +21,6 @@ foreach my $di (@d) {
 	}
 
 my $idx = "index.cgi?dom=$dominits[0]->[0]->{'id'}";
-my $ex;
 if ($in{'delete'}) {
 	# Delete them all
 	foreach my $di (@dominits) {
@@ -37,7 +36,7 @@ elsif ($in{'startnow'}) {
 		print &text('start_starting',
 			    "<tt>$di->[1]->{'name'}</tt>"),"\n";
 		print "<pre>";
-		$ex = &start_domain_action($di->[0], $di->[1]);
+		&start_domain_action($di->[0], $di->[1]);
 		print "</pre>";
 		}
 
@@ -51,7 +50,7 @@ elsif ($in{'stopnow'}) {
 		print &text('stop_stopping',
 			    "<tt>$di->[1]->{'name'}</tt>"),"\n";
 		print "<pre>";
-		$ex = &stop_domain_action($di->[0], $di->[1]);
+		&stop_domain_action($di->[0], $di->[1]);
 		print "</pre>";
 		}
 
@@ -65,7 +64,7 @@ elsif ($in{'restartnow'}) {
 		print &text('restart_restarting',
 			    "<tt>$di->[1]->{'name'}</tt>"),"\n";
 		print "<pre>";
-		$ex = &restart_domain_action($di->[0], $di->[1]);
+		&restart_domain_action($di->[0], $di->[1]);
 		print "</pre>";
 		}
 
